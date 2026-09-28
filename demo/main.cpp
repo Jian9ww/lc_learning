@@ -1,16 +1,14 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <unordered_map>
 using namespace std;
 
-int main() {10
+int main() {
     unordered_map<int, int> mp;
-    map<int, int> omp;
+
     // 插入
     mp[1] = 2;
     mp[2] = 3;
 
-    int n = 2;
-    cin >> n;
-    cout << "键1" << n << "的值: " << mp[n] << endl; // 如果键不存在，会插入 (n,0)
     // 查询（存在）
     if (mp.find(1) != mp.end()) {
         cout << "键1的值: " << mp[1] << endl;
@@ -34,3 +32,4 @@ int main() {10
 
     return 0;
 }
+
