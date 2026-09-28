@@ -1,0 +1,18 @@
+# C++ build outputs
+*.exe
+*.o
+*.obj
+*.out.exe
+*.dll
+*.a
+*.lib
+*.pdb
+*.ilk
+build/
+
+# Editor and operating system temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

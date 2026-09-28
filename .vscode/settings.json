@@ -1,0 +1,18 @@
+{
+  "C_Cpp.default.compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
+  "C_Cpp.default.cppStandard": "c++14",
+  "C_Cpp.default.intelliSenseMode": "windows-gcc-x64",
+  "terminal.integrated.defaultProfile.windows": "PowerShell (UTF-8)",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell (UTF-8)": {
+      "source": "PowerShell",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-NoExit",
+        "-Command",
+        "chcp 65001"
+      ]
+    }
+  }
+}
