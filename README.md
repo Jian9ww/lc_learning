@@ -6,22 +6,24 @@
 
 | 天数 | 主题 | 入口 |
 | --- | --- | --- |
-| Day01 | 哈希、数组技巧、矩阵 | [专题清单](Day01_哈希_数组_矩阵/README.md) |
-| Day02 | 栈与双指针 | [专题清单](Day02_栈与双指针/README.md) |
-| Day03 | 回溯 | [专题清单](Day03_回溯/README.md) |
-| Day04 | BFS 与动态规划基础 | [专题清单](Day04_BFS与动态规划基础/README.md) |
-| Day05 | 背包与多维动态规划 | [专题清单](Day05_动态规划进阶/README.md) |
-| Day06 | 贪心与二叉树 | [专题清单](Day06_贪心与二叉树/README.md) |
-| Day07 | 堆与二分查找 | [专题清单](Day07_堆与二分查找/README.md) |
-| Day08 | 技巧、数学、链表（补充专题） | [专题清单](Day08_技巧_数学_链表/README.md) |
-| Day09 | 机器学习手撕 | [专题清单](Day09_机器学习手撕/README.md) |
-| Day10 | 神经网络与注意力手撕 | [专题清单](Day10_神经网络与注意力/README.md) |
+| Day01 | 哈希、数组技巧、矩阵 | [专题清单](Day01_hash_array_matrix/README.md) |
+| Day02 | 栈与双指针 | [专题清单](Day02_stack_two_pointers/README.md) |
+| Day03 | 回溯 | [专题清单](Day03_backtracking/README.md) |
+| Day04 | BFS 与动态规划基础 | [专题清单](Day04_bfs_dp_basics/README.md) |
+| Day05 | 背包与多维动态规划 | [专题清单](Day05_dp_advanced/README.md) |
+| Day06 | 贪心与二叉树 | [专题清单](Day06_greedy_binary_tree/README.md) |
+| Day07 | 堆与二分查找 | [专题清单](Day07_heap_binary_search/README.md) |
+| Day08 | 技巧、数学、链表（补充专题） | [专题清单](Day08_tricks_math_linked_list/README.md) |
+| Day09 | 机器学习手撕 | [专题清单](Day09_machine_learning/README.md) |
+| Day10 | 神经网络与注意力手撕 | [专题清单](Day10_neural_network_attention/README.md) |
 
 完整题目入口与学习建议见[学习路线](学习路线.md)。每个专题目录的 `README.md` 包含原站入口、练习清单和 C++ 重点。
 
+刷题时遇到的 STL 用法、原理和易错点记录在 [note.md](note.md)，按知识点持续补充。
+
 ## 练习方式
 
-1. 进入当天的专题目录，新建并保存题目文件，例如 `Day01_哈希_数组_矩阵/01_哈希/LC0001_两数之和.cpp`。
+1. 进入当天的专题目录，新建并保存题目文件，例如 `Day01_hash_array_matrix/01_hash/LC0001_two_sum.cpp`。编译用的目录和源码文件名统一使用英文；中文题名放在注释和练习清单中。当前 Windows 工具链处理中文路径时出现过乱码和 `Illegal byte sequence` 错误。
 2. 每题独立编写核心函数；本地版本补上 `main()` 和输入输出。
 3. 原站支持 C++ 时按题面要求提交；不支持时在本地用 C++14 运行并核对样例和边界情况。AI 题目前未看到 C++ 选项，先在本地练习。
 4. 完成后勾选专题清单，记录思路、复杂度、易错点；AI 题同时记录矩阵形状和浮点误差。
@@ -36,5 +38,4 @@
 
 生成的 `.exe` 位于源码旁边。编译器路径是 `C:/msys64/ucrt64/bin/g++.exe`。
 
-根目录 `main.cpp` 保留为现有练习文件；后续题目放入对应专题目录。
-
+`demo/main.cpp` 是现有练习文件，`demo/hash_table.cpp` 是哈希表原理示例；后续题目放入对应专题目录。
