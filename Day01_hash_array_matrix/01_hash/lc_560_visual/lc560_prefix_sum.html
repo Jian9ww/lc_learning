@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LC560 前缀和讲解</title>
+<!-- 本地直接双击打开即可播放；不依赖网络。空格 播放/暂停，← → 快退/快进 5 秒，数字键 1-9 跳章节。 -->
+<style>
+/* 版式：作业本方格纸 + 蓝色圆珠笔 + 红笔批改 + 黄色荧光笔；1920×1080 固定舞台，按窗口等比缩放 */
+:root{
+  --paper:#F4F5F0; --gridA:#E5E9EA; --gridB:#D6DDE1;
+  --ink:#1B2631; --graphite:#66707A; --faint:#AFB7BD; --card:rgba(255,255,255,.64);
+  --blue:#2451C4; --blue-soft:rgba(36,81,196,.09);
+  --red:#CF3528; --marker:#FFE14D;
+  --display:"Noto Serif SC","Source Han Serif SC","STSong",serif;
+  --body:"Noto Sans SC","Microsoft YaHei","PingFang SC",sans-serif;
+  --hand:"KaiTi","STKaiti","楷体",serif;
+  --mono:"Cascadia Mono","Maple Mono NF CN",Consolas,monospace;
+  --num:"Bahnschrift","DIN Alternate","Segoe UI",sans-serif;
+  --chrome:#1D2125; --chrome-line:#383E44; --chrome-fg:#E6E8EA; --chrome-dim:#97A0A8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--chrome);overflow:hidden}
+#wrap{position:absolute;left:0;right:0;top:0;bottom:64px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#holder{position:relative;flex:none}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--gridB) 1px,transparent 1px),linear-gradient(90deg,var(--gridB) 1px,transparent 1px),
+    linear-gradient(var(--gridA) 1px,transparent 1px),linear-gradient(90deg,var(--gridA) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;background-position:-1px -1px;
+  font-family:var(--body);color:var(--ink);cursor:pointer}
+body.capture #wrap{bottom:0} body.capture #bar{display:none} body.capture #stage{cursor:default}
+#scene{position:absolute;inset:0}
+.a{position:absolute;white-space:nowrap}
+.cell{position:absolute;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);background:rgba(255,255,255,.72);
+  font-family:var(--num);border-radius:5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ghost{position:absolute;border:1.5px dashed var(--faint);border-radius:5px}
+.idx{font-family:var(--mono);color:var(--graphite);text-align:center}
+.hand{font-family:var(--hand);color:var(--red)}
+.mk{position:absolute;background:var(--marker);mix-blend-mode:multiply;border-radius:8px}
+.dot{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--blue)}
+.card{position:absolute;background:var(--card);border:1.5px solid rgba(27,38,49,.16);border-radius:10px}
+.code{position:absolute;background:rgba(255,255,255,.74);border:1.5px solid rgba(27,38,49,.18);border-radius:8px;padding:16px 24px 20px;font-family:var(--mono);color:var(--ink)}
+.code-title{font-family:var(--body);font-size:20px;color:var(--graphite);letter-spacing:.06em;margin-bottom:8px;line-height:1.5}
+.code .cl{white-space:pre;position:relative}
+.code-hl{position:absolute;left:12px;right:12px;background:var(--marker);mix-blend-mode:multiply;border-radius:4px;opacity:0}
+.kw{color:var(--blue)}
+svg.ov{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible;pointer-events:none}
+svg text{font-family:var(--mono)}
+svg circle,svg path,svg line{transform-box:fill-box;transform-origin:center}
+.lv{stroke:var(--gridB);stroke-width:1.5}
+.lv.zero{stroke:var(--faint);stroke-width:2}
+.lvl{fill:var(--graphite);font-size:20px}
+.seg{stroke:var(--blue);stroke-width:4;stroke-linecap:round;fill:none}
+.pt{fill:var(--blue);stroke:var(--paper);stroke-width:3}
+.pt.virt{fill:var(--paper);stroke:var(--blue);stroke-width:3.5}
+.pv{fill:var(--blue);font-family:var(--num);font-size:22px;text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+.halo{paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+.target{stroke:var(--red);stroke-width:2.5;stroke-dasharray:9 7}
+.ring{fill:none;stroke:var(--blue);stroke-width:3}
+.hs{font-family:var(--hand);fill:var(--red);font-size:26px}
+#hdr,#chap{position:absolute;top:42px;font-size:22px;color:var(--graphite);letter-spacing:.06em}
+#hdr{left:96px} #chap{right:96px;text-align:right}
+#hdr b{color:var(--ink);font-weight:600}
+#cap{position:absolute;left:120px;right:120px;bottom:40px;text-align:center;pointer-events:none}
+#cap span{display:inline-block;max-width:1640px;font-size:34px;line-height:1.55;padding:10px 26px;background:rgba(244,245,240,.95);
+  border-radius:6px;color:var(--ink);text-wrap:balance;box-shadow:0 0 0 1px rgba(27,38,49,.08)}
+#prog{position:absolute;left:0;bottom:0;height:5px;width:100%;background:var(--gridB)}
+#progFill{height:100%;background:var(--ink);width:0}
+.tick{position:absolute;top:0;width:3px;height:5px;background:var(--paper)}
+
+#bar{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--chrome-fg);font:14px var(--body)}
+#bar button{background:none;border:1px solid var(--chrome-line);color:var(--chrome-fg);border-radius:6px;height:34px;padding:0 12px;font:inherit;cursor:pointer;flex:none}
+#bar button:hover{border-color:#6A737C}
+#bar button:focus-visible,#seek:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+#play{width:46px;display:flex;align-items:center;justify-content:center}
+#play svg{width:16px;height:16px;fill:currentColor}
+#time{font-variant-numeric:tabular-nums;color:var(--chrome-dim);flex:none;min-width:98px}
+#seek{flex:1;min-width:80px;accent-color:#F2D24B}
+#chapters{display:flex;gap:6px;overflow-x:auto;max-width:52%;flex:none;scrollbar-width:none}
+#chapters button{height:28px;padding:0 8px;font-size:12px;color:var(--chrome-dim);white-space:nowrap}
+#chapters button.on{color:var(--chrome-fg);border-color:#F2D24B}
+@media (max-width:900px){#chapters{display:none}}
+@media (prefers-reduced-motion:reduce){#cap span{transition:none}}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="holder"><div id="stage">
+  <div id="hdr"><b>LC 560</b>　和为 K 的子数组</div>
+  <div id="chap"></div>
+  <div id="scene"></div>
+  <div id="cap"><span></span></div>
+  <div id="prog"><div id="progFill"></div></div>
+</div></div></div>
+<div id="bar">
+  <button id="play" aria-label="播放或暂停"></button>
+  <span id="time">00:00 / 00:00</span>
+  <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="播放进度">
+  <div id="chapters"></div>
+  <button id="speed" aria-label="播放速度">1×</button>
+</div>
+<script>
+(function(){
+const CAPTURE=/capture/.test(location.search);
+if(CAPTURE)document.body.classList.add('capture');
+
+/* ---------- 数据：全程用同一个例子 ---------- */
+const NUMS=[1,2,-2,2,1,2],K=3,N=NUMS.length;
+const PRE=[0];NUMS.forEach(v=>PRE.push(PRE[PRE.length-1]+v));
+const P=i=>PRE[i+1];                       // P(-1)=0 是空前缀
+const fmt=v=>v<0?'−'+(-v):String(v);
+const par=v=>v<0?'('+fmt(v)+')':String(v);
+
+/* ---------- 小工具 ---------- */
+const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eout=x=>1-Math.pow(1-x,3);
+const pr=(t,a,b)=>clamp((t-a)/(b-a));
+const ep=(t,a,b)=>ease(pr(t,a,b));
+const lerp=(a,b,p)=>a+(b-a)*p;
+const INK=[27,38,49],BLUE=[36,81,196],GRAY=[175,183,189];
+const mix=(a,b,p)=>`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*p)).join(',')})`;
+const NOPX={opacity:1,zIndex:1,fontWeight:1,lineHeight:1,flex:1};
+function H(tag,cls,css,parent,html){
+  const e=document.createElement(tag);if(cls)e.className=cls;
+  if(css)for(const k in css)e.style[k]=(typeof css[k]==='number'&&!NOPX[k])?css[k]+'px':css[k];
+  if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e;
+}
+const SVGNS='http://www.w3.org/2000/svg';
+function S(tag,attrs,parent,text){
+  const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);
+  if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;
+}
+function vis(e,a,dy=0,dx=0){e.style.opacity=a;e.style.transform=(dy||dx)?`translate(${(1-a)*dx}px,${(1-a)*dy}px)`:'';}
+function pop(e,a){e.style.opacity=a;e.style.transform=`scale(${.82+.18*a})`;}
+function drawable(el){
+  const len=el.getTotalLength();el.style.strokeDasharray=len+' '+(len+4);el.style.strokeDashoffset=len;
+  return {el,len,set(p){el.style.strokeDashoffset=len*(1-p);el.style.opacity=p>0?1:0;}};
+}
+// 手画的红笔圈：略微超过一圈、带一点倾斜
+function penCircle(g,cx,cy,a,b,color,w=3.2,rot=-9){
+  let d='',len=0,px=0,py=0;const n=72,turns=1.1,r=rot*Math.PI/180;
+  for(let k=0;k<=n;k++){
+    const th=-Math.PI*.62+k/n*turns*2*Math.PI,gr=1+.07*k/n;
+    const x=a*gr*Math.cos(th),y=b*gr*Math.sin(th);
+    const X=cx+x*Math.cos(r)-y*Math.sin(r),Y=cy+x*Math.sin(r)+y*Math.cos(r);
+    d+=(k?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);if(k)len+=Math.hypot(X-px,Y-py);px=X;py=Y;
+  }
+  const el=S('path',{d,fill:'none'},g);
+  Object.assign(el.style,{stroke:color,strokeWidth:w,strokeLinecap:'round',strokeLinejoin:'round',strokeDasharray:len+' '+(len+4),strokeDashoffset:len,opacity:0});
+  return {el,len,set(p){el.style.strokeDashoffset=len*(1-p);el.style.opacity=p>0?1:0;}};
+}
+// 方括号：一条括号 = 一段子数组
+function bracket(svg,x1,x2,y,color,label,dir=1,fs=20){
+  const g=S('g',{},svg);
+  const p=S('path',{d:`M${x1} ${y-8*dir} L${x1} ${y} L${x2} ${y} L${x2} ${y-8*dir}`,fill:'none'},g);
+  Object.assign(p.style,{stroke:color,strokeWidth:3.5,strokeLinecap:'round',strokeLinejoin:'round'});
+  const d=drawable(p);let tx=null;
+  if(label){tx=S('text',{x:x2+12,y:y+7,class:'halo'},g,label);tx.style.fill=color;tx.style.fontSize=fs+'px';tx.style.opacity=0;}
+  return {g,d,t:tx,set(pp,lp=pp){d.set(pp);if(tx)tx.style.opacity=lp;}};
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+const KW=/\b(int|for|while|if|return|auto|unordered_map|vector)\b/g;
+function codePanel(r,x,y,lines,fs,lh,title){
+  const box=H('div','code',{left:x,top:y,fontSize:fs,lineHeight:lh+'px'},r);
+  if(title)H('div','code-title',null,box,title);
+  const hl=H('div','code-hl',{height:lh},box);
+  const els=lines.map(l=>H('div','cl',null,box,l?esc(l).replace(KW,'<span class="kw">$1</span>'):' '));
+  let cur;
+  return {box,els,set(i){
+    if(i===cur)return;cur=i;
+    if(i==null){hl.style.opacity=0;}else{hl.style.opacity=.95;hl.style.top=els[i].offsetTop+'px';}
+  }};
+}
+function arrayRow(r,x0,y,w,h,pitch,fs,withIdx=true,ifs=20){
+  const cells=NUMS.map((v,i)=>H('div','cell',{left:x0+pitch*i,top:y,width:w,height:h,fontSize:fs},r,fmt(v)));
+  const idx=withIdx?NUMS.map((v,i)=>H('div','a idx',{left:x0+pitch*i,top:y+h+6,width:w,fontSize:ifs},r,String(i))):[];
+  return {cells,idx};
+}
+// 前缀和折线：横轴下标 -1..N-1，纵轴 P
+function buildChart(svg,c){
+  const G={lv:[]};const R=c.r||10;
+  const grid=S('g',{},svg);
+  for(let p=c.lo;p<=c.hi;p++){
+    const yy=c.y(p),g=S('g',{},grid);
+    S('line',{x1:c.gx0,x2:c.gx1,y1:yy,y2:yy,class:p===0?'lv zero':'lv'},g);
+    S('text',{x:c.gx0-12,y:yy+7,class:'lvl','text-anchor':'end'},g,fmt(p));
+    G.lv.push(g);
+  }
+  G.under=S('g',{},svg);
+  G.segs=[];for(let i=0;i<N;i++)G.segs.push(drawable(S('line',{x1:c.x(i-1),y1:c.y(P(i-1)),x2:c.x(i),y2:c.y(P(i)),class:'seg'},svg)));
+  G.mid=S('g',{},svg);
+  G.pts=[];G.vals=[];
+  for(let i=-1;i<N;i++){
+    G.pts.push(S('circle',{cx:c.x(i),cy:c.y(P(i)),r:R,class:i<0?'pt virt':'pt'},svg));
+    G.vals.push(S('text',{x:c.x(i),y:c.y(P(i))-R-15,class:'pv'},svg,fmt(P(i))));
+  }
+  G.top=S('g',{},svg);
+  return G;
+}
+
+const BRUTE=[
+'int subarraySum(vector<int>& nums, int k) {',
+'    int n = nums.size();',
+'    int count = 0;',
+'    for (int i = 0; i < n; i++) {',
+'        int temp_sum = 0;',
+'        int j = i;',
+'        while (j < n) {',
+'            temp_sum += nums[j];',
+'            j++;',
+'            if (temp_sum == k)',
+'                count++;',
+'        }',
+'    }',
+'    return count;',
+'}'];
+const OPT=[
+'int subarraySum(vector<int>& nums, int k) {',
+'    int n = nums.size();',
+'    int count = 0;',
+'    int temp_sum = 0;',
+'    unordered_map<int, int> freq;',
+'    freq[0] = 1;',
+'',
+'    for (int i = 0; i < n; i++) {',
+'        temp_sum += nums[i];',
+'        auto it = freq.find(temp_sum - k);',
+'        if (it != freq.end()) {',
+'            count += it->second;',
+'        }',
+'        freq[temp_sum]++;',
+'    }',
+'    return count;',
+'}'];
+
+/* ================= 场景 ================= */
+const SC=[];
+
+/* 1 题目 */
+SC.push({title:'题目',dur:10,caps:[
+  [.5,5.2,'题目：数组里有多少段连续子数组，和恰好等于 k？'],
+  [5.4,9.7,'例子：nums = [1, 2, −2, 2, 1, 2]，k = 3。答案是 6 段，就是下面这 6 条红线。']],
+build(r){
+  const c={};
+  c.eb=H('div','a',{left:164,top:190,fontFamily:'var(--mono)',fontSize:30,color:'var(--graphite)',letterSpacing:'.04em'},r,'LeetCode 560 · 哈希 / 前缀和');
+  c.ti=H('div','a',{left:154,top:236,fontFamily:'var(--display)',fontSize:124,fontWeight:900,letterSpacing:'.02em',lineHeight:1.2},r,'和为 K 的子数组');
+  c.sub=H('div','a',{left:164,top:416,fontSize:38},r,'原来的双重循环，是怎么一步步变成 <b style="color:var(--blue)">前缀和 + 哈希表</b> 的');
+  c.arr=arrayRow(r,164,556,120,120,136,56,true,24);
+  c.k=H('div','a',{left:1036,top:570,fontFamily:'var(--num)',fontSize:88,color:'var(--red)',lineHeight:1.1},r,'k = 3');
+  c.svg=S('svg',{class:'ov'},r);
+  const ans=[[0,1],[0,3],[1,4],[3,4],[2,5],[4,5]];
+  c.br=ans.map(([a,b],n)=>bracket(c.svg,164+136*a+12,164+136*b+108,736+n*22,'var(--red)',null,1));
+  c.note=H('div','a hand',{left:1010,top:770,fontSize:38},r,'一共 6 段');
+  return c;
+},
+update(c,t){
+  vis(c.eb,ep(t,.2,.9),16);vis(c.ti,ep(t,.35,1.2),24);vis(c.sub,ep(t,.9,1.7),16);
+  c.arr.cells.forEach((e,i)=>pop(e,ep(t,1.7+.12*i,2.2+.12*i)));
+  c.arr.idx.forEach((e,i)=>e.style.opacity=ep(t,1.9+.12*i,2.4+.12*i));
+  vis(c.k,ep(t,2.7,3.3),0,-24);
+  c.br.forEach((b,n)=>b.set(ep(t,5.8+.4*n,6.3+.4*n)));
+  vis(c.note,ep(t,8.4,9),10);
+}});
+
+/* 2 原来的写法 */
+SC.push({title:'原来的写法',dur:28,caps:[
+  [.3,5.5,'你的写法：先固定起点 i，j 往右走，边走边把 nums[j] 加进 temp_sum。'],
+  [5.7,10.5,'右边每一格是一段 nums[i..j] 的和。画红圈的，是和等于 3 的格子。'],
+  [10.7,15.2,'注意每一行的开头：一换起点，temp_sum 就归零，前面加过的全部作废。'],
+  [15.4,21.5,'6 个数一共 6×7/2 = 21 格，每格一次加法。n 个数就是 n(n+1)/2 格，也就是 O(n²)。'],
+  [21.7,27.6,'可 21 格里只有 6 格是答案。能不能不一格一格地试？']],
+build(r){
+  const c={};
+  c.code=codePanel(r,96,140,BRUTE,25,42,'你的原始写法');
+  c.arr=arrayRow(r,1010,160,96,84,108,40,true,20);
+  H('div','a idx',{left:928,top:186,fontSize:24,textAlign:'left'},r,'j →');
+  c.mk=H('div','mk',{left:0,top:150,width:0,height:104,opacity:0},r);
+  c.st=H('div','a',{left:930,top:290,fontFamily:'var(--mono)',fontSize:28},r,'');
+  c.svg=S('svg',{class:'ov'},r);
+  c.steps=[];c.cells=[];c.circ=[];c.rowNote=[];c.rowK0=[];
+  for(let i=0;i<N;i++){
+    const y=350+72*i;
+    H('div','a idx',{left:922,top:y+16,fontSize:22,textAlign:'left'},r,'i = '+i);
+    c.rowK0.push(c.steps.length);
+    c.rowNote.push(i>0?H('div','a hand',{left:1010+108*i-96,top:y+13,width:82,textAlign:'right',fontSize:28,opacity:0},r,'归零'):null);
+    for(let j=i;j<N;j++){
+      const sum=P(j)-P(i-1),hit=sum===K,x=1010+108*j;
+      H('div','ghost',{left:x,top:y,width:96,height:60},r);
+      const cell=H('div','cell',{left:x,top:y,width:96,height:60,fontSize:30,opacity:0},r,fmt(sum));
+      if(hit)cell.style.color='var(--red)';
+      c.steps.push({i,j,sum,hit});c.cells.push(cell);
+      c.circ.push(hit?penCircle(c.svg,x+48,y+30,56,37,'var(--red)',3.4):null);
+    }
+  }
+  c.cL=H('div','a',{left:1690,top:350,fontSize:22,color:'var(--graphite)'},r,'count');
+  c.cV=H('div','a',{left:1686,top:378,fontFamily:'var(--num)',fontSize:76,color:'var(--red)',lineHeight:1},r,'0');
+  c.aL=H('div','a',{left:1690,top:498,fontSize:22,color:'var(--graphite)'},r,'加法次数');
+  c.aV=H('div','a',{left:1686,top:526,fontFamily:'var(--num)',fontSize:76,lineHeight:1},r,'0');
+  c.n1=H('div','a hand',{left:1010,top:788,fontSize:36},r,'6×7/2 = 21 格');
+  c.n2=H('div','a hand',{left:1290,top:788,fontSize:36},r,'只有 6 格是答案');
+  c.n3=H('div','a hand',{left:100,top:852,fontSize:34},r,'两层循环 → O(n²)');
+  return c;
+},
+update(c,t){
+  c.arr.cells.forEach((e,i)=>pop(e,ep(t,.3+.06*i,.7+.06*i)));
+  c.arr.idx.forEach((e,i)=>e.style.opacity=ep(t,.4+.06*i,.8+.06*i));
+  const T0=3.5,SD=.55,M=c.steps.length,f=(t-T0)/SD,s=Math.floor(f),ph=f-s;
+  let count=0,adds=0;
+  c.steps.forEach((st,k)=>{
+    const a=k<s?1:k===s?eout(clamp(ph/.3)):0;
+    const dim=st.hit?1:1-.6*ep(t,21.8,22.8);
+    c.cells[k].style.opacity=a*dim;c.cells[k].style.transform=`scale(${.86+.14*a})`;
+    if(st.hit){c.circ[k].set(k<s?1:k===s?ep(ph,.5,.95):0);if(k<s||(k===s&&ph>.6))count++;}
+    if(k<s||(k===s&&ph>.08))adds++;
+  });
+  c.rowNote.forEach((e,i)=>{if(e)vis(e,ep(t,T0+c.rowK0[i]*SD,T0+c.rowK0[i]*SD+.3),0,10);});
+  let line=null;
+  if(s>=0&&s<M){
+    const st=c.steps[s];
+    c.mk.style.opacity=.9;c.mk.style.left=(1010+108*st.i-8)+'px';c.mk.style.width=(108*(st.j-st.i)+112)+'px';
+    const terms=st.j===st.i?['0']:[];for(let q=st.i;q<=st.j;q++)terms.push(par(NUMS[q]));
+    c.st.innerHTML=`i = ${st.i}　j = ${st.j}　temp_sum = ${terms.join(' + ')} = <b style="color:${st.hit?'var(--red)':'var(--ink)'}">${fmt(st.sum)}</b>`;
+    c.st.style.opacity=1;
+    line=(st.j===st.i&&ph<.3)?4:ph<.6?7:(st.hit?10:9);
+  }else if(s>=M){
+    c.mk.style.opacity=.9*(1-ep(t,T0+M*SD,T0+M*SD+.4));
+    c.st.innerHTML='循环结束：count = 6，加法做了 21 次';c.st.style.opacity=1;
+  }else{
+    c.mk.style.opacity=0;c.st.style.opacity=0;line=t>1.4?3:null;
+  }
+  c.code.set(line);
+  c.cV.textContent=count;c.aV.textContent=adds;
+  vis(c.n1,ep(t,15.5,16.3),10);vis(c.n3,ep(t,16,16.8),10);vis(c.n2,ep(t,21.9,22.7),10);
+}});
+
+/* 3 重复在哪 */
+SC.push({title:'重复在哪',dur:24,caps:[
+  [.3,4.2,'把刚才表格的前三行单独拿出来，按列对齐。'],
+  [4.4,8.6,'第 1 行的每一格，都等于它正上方第 0 行的数减 1。这个 1 就是 nums[0]。'],
+  [8.8,13,'第 2 行的每一格，都等于第 0 行减 3，也就是减去 1 + 2。'],
+  [13.2,18,'第 0 行其实就是前缀和 P。在最前面补一个 P[−1] = 0，表示一个数都还没取。'],
+  [18.2,23.7,'于是任意一段的和，都能写成两个前缀和相减：sum(i..j) = P[j] − P[i−1]。']],
+build(r){
+  const c={},X=j=>480+170*j;
+  H('div','a idx',{left:110,top:166,fontSize:26,textAlign:'left'},r,'nums');
+  c.nums=NUMS.map((v,j)=>H('div','cell',{left:X(j),top:150,width:130,height:64,fontSize:34},r,fmt(v)));
+  c.rows=[0,1,2].map(rw=>{
+    const top=290+160*rw;
+    const lab=H('div','a',{left:110,top:top+22,fontFamily:'var(--mono)',fontSize:30},r,'i = '+rw);
+    const cells=[],ann=[];
+    for(let j=rw;j<N;j++){
+      cells.push(H('div','cell',{left:X(j),top,width:130,height:84,fontSize:42},r,fmt(P(j)-P(rw-1))));
+      if(rw>0)ann.push(H('div','a hand',{left:X(j),top:top-40,width:130,textAlign:'center',fontSize:28},r,`${fmt(P(j))} − ${fmt(P(rw-1))}`));
+    }
+    const side=rw>0?H('div','a hand',{left:1500,top:top+20,fontSize:36},r,`= 第 0 行 − ${fmt(P(rw-1))}`):null;
+    return {lab,cells,ann,side,top};
+  });
+  c.svg=S('svg',{class:'ov'},r);
+  c.c1=penCircle(c.svg,X(0)+65,332,76,48,'var(--red)',3.4);
+  c.c2=penCircle(c.svg,X(1)+65,332,76,48,'var(--red)',3.4);
+  c.pLab=H('div','a',{left:110,top:312,fontFamily:'var(--mono)',fontSize:30,color:'var(--blue)'},r,'P[j]');
+  c.pIdx=NUMS.map((v,j)=>H('div','a',{left:X(j),top:378,width:130,textAlign:'center',fontFamily:'var(--mono)',fontSize:18,color:'var(--blue)'},r,`P[${j}]`));
+  c.pm1=H('div','cell',{left:X(-1),top:290,width:130,height:84,fontSize:42,borderStyle:'dashed',borderColor:'var(--blue)',color:'var(--blue)'},r,'0');
+  c.pm1L=H('div','a',{left:X(-1),top:378,width:130,textAlign:'center',fontFamily:'var(--mono)',fontSize:18,color:'var(--blue)'},r,'P[−1]');
+  c.fx=H('div','a',{left:310,top:718,fontFamily:'var(--mono)',fontSize:56},r,'sum(i..j) = <span style="color:var(--blue)">P[j]</span> − <span style="color:var(--blue)">P[i−1]</span>');
+  c.ex=H('div','a',{left:314,top:806,fontFamily:'var(--mono)',fontSize:28,color:'var(--graphite)'},r,'例：sum(2..4) = P[4] − P[1] = 4 − 3 = <b style="color:var(--ink)">1</b>');
+  c.r1=penCircle(c.svg,X(4)+65,652,76,48,'var(--blue)',3);
+  c.r2=penCircle(c.svg,X(4)+65,332,76,46,'var(--blue)',3);
+  c.r3=penCircle(c.svg,X(1)+65,332,76,46,'var(--blue)',3);
+  return c;
+},
+update(c,t){
+  c.nums.forEach((e,j)=>pop(e,ep(t,.2+.05*j,.6+.05*j)));
+  const R=c.rows;
+  const blue=ep(t,13.4,14.2);
+  vis(R[0].lab,ep(t,.4,1)*(1-ep(t,13.4,13.9)),0,-10);
+  R[0].cells.forEach((e,j)=>{pop(e,ep(t,.5+.06*j,.9+.06*j));const col=mix(INK,BLUE,blue);e.style.color=col;e.style.borderColor=col;});
+  vis(R[1].lab,ep(t,1.6,2.2),0,-10);R[1].cells.forEach((e,j)=>pop(e,ep(t,1.7+.06*j,2.2+.06*j)));
+  R[1].ann.forEach((e,n)=>vis(e,ep(t,3.6+.55*n,4.0+.55*n),10));
+  vis(R[1].side,ep(t,6.6,7.2),0,-12);
+  vis(R[2].lab,ep(t,8.4,9),0,-10);R[2].cells.forEach((e,j)=>pop(e,ep(t,8.5+.06*j,9+.06*j)));
+  R[2].ann.forEach((e,n)=>vis(e,ep(t,9.8+.55*n,10.2+.55*n),10));
+  vis(R[2].side,ep(t,11.8,12.4),0,-12);
+  const cf=1-ep(t,13,13.6);
+  c.c1.set(ep(t,3.0,3.6));c.c1.el.style.opacity=t>3?cf:0;
+  c.c2.set(ep(t,9.2,9.8));c.c2.el.style.opacity=t>9.2?cf:0;
+  vis(c.pLab,ep(t,13.6,14.2),0,10);
+  c.pIdx.forEach((e,j)=>e.style.opacity=ep(t,14+.05*j,14.4+.05*j));
+  pop(c.pm1,ep(t,14.6,15.1));c.pm1L.style.opacity=ep(t,14.8,15.3);
+  const fp=ep(t,18.3,19.8);c.fx.style.clipPath=`inset(-10px ${100-100*fp}% -10px 0)`;c.fx.style.opacity=fp>0?1:0;
+  vis(c.ex,ep(t,20.4,21),10);
+  c.r1.set(ep(t,21,21.6));c.r2.set(ep(t,21.3,21.9));c.r3.set(ep(t,21.6,22.2));
+}});
+
+/* 4 画成折线 */
+SC.push({title:'画成折线',dur:26,caps:[
+  [.3,5.8,'把前缀和画成折线：横轴是下标 j，纵轴是 P[j]。每一小段的升降，正好是一个 nums。'],
+  [6,11.8,'一段子数组的和 = 两个点的高度差。nums[1..4] 的和是 3，也就是 P[4] − P[0] = 4 − 1。'],
+  [12,17.5,'反过来想：站在 j = 4，想要和为 3，就往左找高度恰好是 4 − 3 = 1 的点。'],
+  [17.7,25.6,'P[0] 和 P[2] 都在高度 1，所以一下找到 2 段。要知道的只是：这个高度之前出现过几次。']],
+build(r){
+  const c={},X=i=>300+175*(i+1),Y=p=>760-85*p;c.X=X;c.Y=Y;
+  c.svg=S('svg',{class:'ov'},r);
+  c.G=buildChart(c.svg,{x:X,y:Y,lo:0,hi:6,gx0:270,gx1:1392,r:11});
+  c.idx=[];for(let i=-1;i<N;i++)c.idx.push(S('text',{x:X(i),y:806,class:'lvl','text-anchor':'middle'},c.svg,fmt(i)));
+  c.idx.push(S('text',{x:258,y:806,class:'lvl','text-anchor':'end'},c.svg,'j'));
+  c.idx.push(S('text',{x:258,y:222,class:'lvl','text-anchor':'end'},c.svg,'P'));
+  c.sl=NUMS.map((v,i)=>{
+    const x1=X(i-1),y1=Y(P(i-1)),x2=X(i),y2=Y(P(i)),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy);
+    const nx=dy/L,ny=-dx/L;
+    return S('text',{x:(x1+x2)/2+nx*30,y:(y1+y2)/2+ny*30+7,'text-anchor':'middle',class:'lvl halo'},c.svg,(v>0?'+':'')+fmt(v));
+  });
+  // A：一段 = 高度差
+  const pts=[0,1,2,3,4].map(i=>X(i)+','+Y(P(i))).join(' ');
+  const pl=S('polyline',{points:pts,fill:'none'},c.G.under);
+  Object.assign(pl.style,{stroke:'var(--marker)',strokeWidth:24,strokeLinecap:'round',strokeLinejoin:'round',mixBlendMode:'multiply'});
+  c.mkl=drawable(pl);
+  c.hd=S('line',{x1:X(0),y1:Y(1),x2:X(4)+46,y2:Y(1)},c.G.mid);
+  Object.assign(c.hd.style,{stroke:'var(--graphite)',strokeWidth:2,strokeDasharray:'6 6'});
+  c.va=S('path',{d:`M${X(4)+46} ${Y(1)} L${X(4)+46} ${Y(4)+4} M${X(4)+38} ${Y(4)+14} L${X(4)+46} ${Y(4)+2} L${X(4)+54} ${Y(4)+14} M${X(4)+38} ${Y(1)-12} L${X(4)+46} ${Y(1)} L${X(4)+54} ${Y(1)-12}`,fill:'none'},c.G.mid);
+  Object.assign(c.va.style,{stroke:'var(--red)',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'});
+  c.vt=S('text',{x:X(4)+64,y:(Y(1)+Y(4))/2+14,class:'hs halo'},c.G.mid,'差 3');
+  c.vt.style.fontSize='40px';
+  // B：往回找
+  c.ring=S('circle',{cx:X(4),cy:Y(4),r:20,class:'ring'},c.G.top);
+  c.tl=S('line',{y1:Y(1),y2:Y(1),x1:X(4),x2:X(4),class:'target'},c.G.mid);
+  c.tlab=S('text',{x:X(4)+30,y:Y(1)+9,class:'hs halo'},c.G.top,'要找的高度：4 − 3 = 1');
+  c.fc=[0,2].map(m=>penCircle(c.G.top,X(m),Y(P(m)),24,20,'var(--red)',3.2));
+  c.br=[bracket(c.svg,X(0),X(4),842,'var(--red)','nums[1..4]',1,22),bracket(c.svg,X(2),X(4),868,'var(--red)','nums[3..4]',1,22)];
+  // 右侧说明卡
+  c.card=H('div','card',{left:1440,top:236,width:384,height:420},r);
+  c.A=H('div','a',{left:24,top:22,width:336},c.card);
+  c.Al=[
+    H('div',null,{fontFamily:'var(--mono)',fontSize:26,fontWeight:700},c.A,'nums[1..4]'),
+    H('div',null,{fontFamily:'var(--mono)',fontSize:24,marginTop:'8px'},c.A,'= 2 + (−2) + 2 + 1 = 3'),
+    H('div',null,{fontFamily:'var(--mono)',fontSize:26,fontWeight:700,color:'var(--blue)',marginTop:'34px'},c.A,'P[4] − P[0]'),
+    H('div',null,{fontFamily:'var(--mono)',fontSize:24,marginTop:'8px'},c.A,'= 4 − 1 = 3'),
+    H('div','hand',{fontSize:32,marginTop:'34px'},c.A,'两种算法，同一个数')];
+  c.B=H('div','a',{left:24,top:22,width:336},c.card);
+  c.Bl=[
+    H('div',null,{fontSize:28,fontWeight:700},c.B,'站在 j = 4 往回看'),
+    H('div',null,{fontFamily:'var(--mono)',fontSize:24,marginTop:'20px'},c.B,'要找高度 4 − 3 = 1'),
+    H('div',null,{fontFamily:'var(--mono)',fontSize:24,marginTop:'20px'},c.B,'高度 1 的点：<b style="color:var(--red)">P[0]、P[2]</b>'),
+    H('div',null,{fontSize:26,fontWeight:700,color:'var(--red)',marginTop:'28px'},c.B,'→ 2 段答案'),
+    H('div',null,{fontFamily:'var(--mono)',fontSize:22,marginTop:'8px',color:'var(--red)'},c.B,'nums[1..4]、nums[3..4]'),
+    H('div','hand',{fontSize:28,marginTop:'30px',whiteSpace:'normal',lineHeight:1.4},c.B,'高度 1 出现过 2 次。<br>只要记下每个高度出现的次数就够了')];
+  return c;
+},
+update(c,t){
+  const G=c.G,X=c.X;
+  G.lv.forEach(g=>g.style.opacity=ep(t,0,.6));
+  c.idx.forEach(e=>e.style.opacity=ep(t,.2,.8));
+  pop(G.pts[0],ep(t,.2,.5));G.vals[0].style.opacity=ep(t,.2,.5);
+  for(let i=0;i<N;i++){
+    const a=.4+.42*i;G.segs[i].set(ep(t,a,a+.42));
+    const pa=ep(t,a+.3,a+.55);pop(G.pts[i+1],pa);G.vals[i+1].style.opacity=pa;
+    c.sl[i].style.opacity=ep(t,3.2+.3*i,3.6+.3*i);
+  }
+  const fA=1-ep(t,11.6,12.2);
+  c.mkl.set(ep(t,6.2,7.4));c.mkl.el.style.opacity=t>6.2?.9*fA:0;
+  c.hd.style.opacity=ep(t,7.4,8)*fA;c.va.style.opacity=ep(t,8,8.6)*fA;c.vt.style.opacity=ep(t,8.3,8.9)*fA;
+  c.card.style.opacity=ep(t,6.6,7.2);
+  c.A.style.opacity=1-ep(t,11.5,11.9);
+  c.Al.forEach((e,k)=>vis(e,ep(t,6.8+.9*k,7.3+.9*k),8));
+  c.B.style.opacity=ep(t,12.1,12.4);
+  [12.3,13.5,15.2,16.8,17.3,19.6].forEach((a,k)=>vis(c.Bl[k],ep(t,a,a+.5),8));
+  c.ring.style.opacity=ep(t,12.2,12.7);
+  const tp=ep(t,12.6,14);c.tl.setAttribute('x1',lerp(X(4),262,tp));c.tl.style.opacity=tp>0?1:0;
+  c.tlab.style.opacity=ep(t,13.4,13.9);
+  c.fc[0].set(ep(t,14.2,14.9));c.fc[1].set(ep(t,14.6,15.3));
+  c.br[0].set(ep(t,16,17),ep(t,16.6,17));c.br[1].set(ep(t,16.5,17.5),ep(t,17.1,17.5));
+}});
+
+/* 5 查表代替内层循环 */
+const S5=[];
+S5.push([.3,6.8,'换个方向：固定右端点，往左数。先准备哈希表 freq，放进 freq[0] = 1，代表空前缀。']);
+[
+ 'i = 0：temp_sum = 1，要找 1 − 3 = −2。表里没有，然后记下 freq[1] = 1。',
+ 'i = 1：temp_sum = 3，要找 0。空前缀在表里，对应 nums[0..1]。count = 1。',
+ 'i = 2：temp_sum = 1，要找 −2，还是没有。记录后 freq[1] 变成 2。',
+ 'i = 3：temp_sum = 3，要找 0，找到 1 个，对应 nums[0..3]。count = 2。',
+ 'i = 4：temp_sum = 4，要找 1。freq[1] = 2，一次加 2：nums[1..4] 和 nums[3..4]。',
+ 'i = 5：temp_sum = 6，要找 3。freq[3] = 2，再加 2：nums[2..5] 和 nums[4..5]。'
+].forEach((s,j)=>S5.push([7+7.2*j+.2,7+7.2*j+7,s]));
+S5.push([50.4,53.8,'6 次查表，count = 6，和暴力枚举 21 格的结果一样。']);
+SC.push({title:'查表代替内层循环',dur:54,caps:S5,
+build(r){
+  const c={},X=i=>880+78*(i+1),Y=p=>610-50*(p+2);c.X=X;c.Y=Y;
+  c.code=codePanel(r,96,132,OPT,23,38,'优化后：前缀和 + 哈希计数');
+  c.note=H('span','hand',{fontSize:22,marginLeft:'12px',opacity:0},c.code.els[7],'← i 是右端点');
+  c.svg=S('svg',{class:'ov'},r);
+  c.G=buildChart(c.svg,{x:X,y:Y,lo:-2,hi:6,gx0:860,gx1:1424,r:9});
+  c.idx=[];for(let i=-1;i<N;i++)c.idx.push(S('text',{x:X(i),y:648,class:'lvl','text-anchor':'middle'},c.svg,fmt(i)));
+  c.idx.push(S('text',{x:846,y:648,class:'lvl','text-anchor':'end'},c.svg,'i'));
+  c.arr=NUMS.map((v,i)=>H('div','cell',{left:X(i)-39-28,top:128,width:56,height:44,fontSize:24},r,fmt(v)));
+  c.mk=H('div','mk',{left:0,top:122,width:68,height:56,opacity:0},r);
+  c.hh=H('div','a',{left:1440,top:122,fontFamily:'var(--mono)',fontSize:28,fontWeight:700},r,'freq');
+  c.hh2=H('div','a',{left:1520,top:130,fontSize:18,color:'var(--graphite)'},r,'前缀和 → 出现次数');
+  c.keys={};
+  [0,1,3,4,6].forEach(p=>{
+    const row=H('div','a',{left:1440,top:Y(p)-19,width:380,height:38,opacity:0},r);
+    H('div','cell',{left:0,top:0,width:64,height:38,fontSize:22},row,fmt(p));
+    H('div','a',{left:76,top:4,fontFamily:'var(--mono)',fontSize:22,color:'var(--graphite)'},row,'→');
+    const dots=[0,1,2].map(d=>H('div','dot',{left:112+26*d,top:11,opacity:0},row));
+    const num=H('div','a',{left:186,top:5,fontFamily:'var(--mono)',fontSize:22,color:'var(--graphite)'},row,'');
+    c.keys[p]={row,dots,num};
+  });
+  c.ghost=H('div','a',{left:1440,top:Y(-2)-19,width:380,height:38,opacity:0},r);
+  H('div','ghost',{left:0,top:0,width:64,height:38},c.ghost);
+  H('div','a',{left:0,top:6,width:64,textAlign:'center',fontFamily:'var(--num)',fontSize:22,color:'var(--graphite)'},c.ghost,'−2');
+  H('div','a hand',{left:80,top:4,fontSize:26},c.ghost,'表里没有');
+  c.hnote=H('div','a',{left:1440,top:652,fontSize:17,color:'var(--graphite)'},r,'哈希表本身无序，这里按高度摆放方便对照');
+  c.oFind=H('div','a',{left:1428,width:290,height:52,border:'2.5px solid var(--red)',borderRadius:'9px',opacity:0},r);
+  c.oRec=H('div','a',{left:1428,width:290,height:52,border:'2.5px solid var(--blue)',borderRadius:'9px',opacity:0},r);
+  c.tl=S('line',{class:'target'},c.G.mid);
+  c.tlab=S('text',{class:'hs halo'},c.G.top);
+  c.ring=S('circle',{r:17,class:'ring'},c.G.top);
+  c.stp=NUMS.map((v,j)=>{
+    const need=P(j)-K,ms=[];for(let m=-1;m<j;m++)if(P(m)===need)ms.push(m);
+    const circ=ms.map(m=>penCircle(c.G.top,X(m),Y(P(m)),19,16,'var(--red)',3));
+    const br=ms.map((m,q)=>bracket(c.svg,X(m)+11,X(j)-11,112-18*(ms.length-1-q),'var(--red)',`[${m+1}..${j}]`,-1,18));
+    return {j,need,ms,circ,br};
+  });
+  c.s1=H('div','a',{left:860,top:680,fontFamily:'var(--mono)',fontSize:28},r,'');
+  c.s2=H('div','a',{left:860,top:728,fontFamily:'var(--mono)',fontSize:28},r,'');
+  c.cl=H('div','a',{left:860,top:796,fontSize:32,color:'var(--graphite)'},r,'count =');
+  c.cv=H('div','a',{left:990,top:782,fontFamily:'var(--num)',fontSize:62,color:'var(--red)',lineHeight:1},r,'0');
+  c.cp=H('div','a hand',{left:1050,top:790,fontSize:42},r,'');
+  return c;
+},
+update(c,t){
+  const X=c.X,Y=c.Y,G=c.G,ST0=7,SD=7.2;
+  let s=Math.floor((t-ST0)/SD),u=t-ST0-s*SD;
+  if(t<ST0){s=-1;u=0;}if(s>=N){s=N;u=0;}
+  c.arr.forEach((e,i)=>pop(e,ep(t,.3+.05*i,.7+.05*i)));
+  c.note.style.opacity=ep(t,4.4,5);
+  c.hnote.style.opacity=ep(t,3,3.6);
+  G.lv.forEach(g=>g.style.opacity=ep(t,.2,.9));c.idx.forEach(e=>e.style.opacity=ep(t,.2,.9));
+  pop(G.pts[0],ep(t,2.2,2.7));G.vals[0].style.opacity=ep(t,2.2,2.7);
+  for(let i=0;i<N;i++){
+    const a=s>i?1:s===i?ep(u,.6,1):0;pop(G.pts[i+1],a);G.vals[i+1].style.opacity=a;
+    G.segs[i].set(s>i?1:s===i?ep(u,.1,.8):0);
+  }
+  // 哈希表
+  const recAt=j=>s>j?1:s===j?ep(u,5.2,5.7):0,initP=ep(t,2.6,3.2);
+  for(const p of [0,1,3,4,6]){
+    const R=c.keys[p],ad=[];if(p===0)ad.push(initP);
+    for(let j=0;j<N;j++)if(P(j)===p)ad.push(recAt(j));
+    R.dots.forEach((d,q)=>pop(d,q<ad.length?ad[q]:0));
+    R.row.style.opacity=ad.length?clamp(ad[0]*1.6):0;
+    const cnt=ad.filter(a=>a>=.5).length;R.num.textContent=cnt?cnt+' 次':'';
+  }
+  let count=0;c.stp.forEach(st=>{if(s>st.j||(s===st.j&&u>=4.2))count+=st.ms.length;});
+  c.cv.textContent=count;
+  const fade=(s>=0&&s<N)?1-ep(u,6.4,6.9):0;
+  c.stp.forEach((st,q)=>{
+    const on=q===s;
+    st.circ.forEach(pc=>{pc.set(on?ep(u,3.2,3.9):0);pc.el.style.opacity=on&&u>3.2?fade:0;});
+    st.br.forEach(b=>{b.set(on?ep(u,3.6,4.4):0,on?ep(u,4,4.4):0);b.g.style.opacity=on?fade:0;});
+  });
+  let line=null;
+  if(s>=0&&s<N){
+    const st=c.stp[s],j=s,Pj=P(j),has=st.ms.length>0;
+    c.mk.style.left=(X(j)-39-34)+'px';c.mk.style.opacity=.9*ep(u,0,.3)*(1-ep(u,6.6,7));
+    c.ring.setAttribute('cx',X(j));c.ring.setAttribute('cy',Y(Pj));c.ring.style.opacity=ep(u,.6,1)*(1-ep(u,5.4,5.9));
+    const tp=ep(u,1.3,2.3);
+    c.tl.setAttribute('x1',lerp(X(j),862,tp));c.tl.setAttribute('x2',X(j));c.tl.setAttribute('y1',Y(st.need));c.tl.setAttribute('y2',Y(st.need));
+    c.tl.style.opacity=(tp>0?1:0)*fade;
+    c.tlab.setAttribute('x',X(j)+16);c.tlab.setAttribute('y',Y(st.need)+9);c.tlab.textContent='找 '+fmt(st.need);
+    c.tlab.style.opacity=ep(u,1.9,2.3)*fade;
+    if(has){c.oFind.style.top=(Y(st.need)-26)+'px';c.oFind.style.opacity=ep(u,1.9,2.3)*(1-ep(u,4.9,5.2));c.ghost.style.opacity=0;}
+    else{c.oFind.style.opacity=0;c.ghost.style.opacity=ep(u,1.9,2.4)*fade;}
+    c.oRec.style.top=(Y(Pj)-26)+'px';c.oRec.style.opacity=ep(u,5,5.3)*(1-ep(u,6.5,6.9));
+    c.s1.innerHTML=`i = ${j}　temp_sum = ${fmt(P(j-1))} + ${par(NUMS[j])} = <b>${fmt(Pj)}</b>`;c.s1.style.opacity=ep(u,.2,.6);
+    let s2=`freq.find(${fmt(Pj)} − 3 = <b style="color:var(--red)">${fmt(st.need)}</b>)`;
+    if(u>3.2)s2+=has?`　→ 找到 <b style="color:var(--red)">${st.ms.length}</b> 个`:'　→ 没有';
+    c.s2.innerHTML=s2;c.s2.style.opacity=ep(u,1.3,1.7);
+    c.cp.textContent=has?'+'+st.ms.length:'';c.cp.style.opacity=has?ep(u,4.2,4.5)*(1-ep(u,5.8,6.3)):0;
+    line=u<1.3?8:u<3.2?9:u<5.1?(has?11:10):u<6.6?13:7;
+  }else{
+    c.mk.style.opacity=0;c.ring.style.opacity=0;c.tl.style.opacity=0;c.tlab.style.opacity=0;
+    c.oFind.style.opacity=0;c.oRec.style.opacity=0;c.ghost.style.opacity=0;c.cp.style.opacity=0;
+    if(s<0){
+      c.s1.innerHTML='temp_sum = 0';c.s1.style.opacity=ep(t,1,1.5);
+      c.s2.innerHTML='freq = { 0: 1 }';c.s2.style.opacity=ep(t,2.6,3.1);
+      line=t<1.2?null:t<2.4?4:5;
+    }else{
+      c.s1.innerHTML='循环结束，一共查了 6 次表';c.s1.style.opacity=1;
+      c.s2.innerHTML='return count;';c.s2.style.opacity=1;line=15;
+    }
+  }
+  c.code.set(line);
+}});
+
+/* 6 一次查表 = 一整列 */
+SC.push({title:'一次查表 = 一整列',dur:14,caps:[
+  [.3,6.5,'回到暴力法的表格。竖着看，第 j 列就是所有以 j 结尾的子数组。'],
+  [6.7,13.7,'暴力法把一列里的格子逐个算出来；哈希表查一次，就直接知道这一列有几个红圈。']],
+build(r){
+  const c={},X=j=>520+124*j,Y=i=>200+82*i;c.X=X;
+  c.top=H('div','a',{left:520,top:112,fontSize:20,color:'var(--graphite)'},r,'行 = 左端点 i　　列 = 右端点 j');
+  c.hd=NUMS.map((v,j)=>H('div','a idx',{left:X(j),top:156,width:108,fontSize:22},r,'j = '+j));
+  c.box=H('div','a',{border:'3px solid var(--blue)',borderRadius:'10px',background:'var(--blue-soft)',opacity:0},r);
+  c.cells=[];c.svg=S('svg',{class:'ov'},r);c.circ=[];
+  for(let i=0;i<N;i++){
+    H('div','a idx',{left:420,top:Y(i)+20,fontSize:22,textAlign:'left'},r,'i = '+i);
+    for(let j=i;j<N;j++){
+      const v=P(j)-P(i-1),e=H('div','cell',{left:X(j),top:Y(i),width:108,height:66,fontSize:30},r,fmt(v));
+      if(v===K){e.style.color='var(--red)';c.circ.push({i,j,pc:penCircle(c.svg,X(j)+54,Y(i)+33,64,42,'var(--red)',3.2)});}
+      c.cells.push({i,j,e});
+    }
+  }
+  c.hits=NUMS.map((v,j)=>c.circ.filter(o=>o.j===j).length);
+  c.res=NUMS.map((v,j)=>H('div','a',{left:X(j),top:716,width:108,textAlign:'center',fontFamily:'var(--num)',fontSize:34,color:c.hits[j]?'var(--red)':'var(--graphite)'},r,'+'+c.hits[j]));
+  c.res2=NUMS.map((v,j)=>H('div','a',{left:X(j),top:762,width:108,textAlign:'center',fontSize:18,color:'var(--blue)'},r,'查 1 次'));
+  c.side=H('div','a',{left:1330,top:250,whiteSpace:'normal',width:460},r,
+    '<div style="font-size:26px;color:var(--graphite)">暴力法：逐格计算</div>'+
+    '<div style="font:96px/1.1 var(--num)">21 <span style="font:28px var(--body)">次加法</span></div>'+
+    '<div style="font-size:26px;color:var(--graphite);margin-top:40px">前缀和 + 哈希：每列查一次</div>'+
+    '<div style="font:96px/1.1 var(--num);color:var(--blue)">6 <span style="font:28px var(--body)">次查表</span></div>'+
+    '<div class="hand" style="font-size:34px;margin-top:40px">两边都得到 count = 6</div>');
+  return c;
+},
+update(c,t){
+  const X=c.X;
+  vis(c.top,ep(t,.2,.8),8);c.hd.forEach((e,j)=>e.style.opacity=ep(t,.2+.05*j,.6+.05*j));
+  c.cells.forEach(o=>pop(o.e,ep(t,.3+.12*o.i+.03*o.j,.7+.12*o.i+.03*o.j)));
+  c.circ.forEach((o,n)=>o.pc.set(ep(t,1+.08*n,1.5+.08*n)));
+  const A=1.8,D=1.4,f=(t-A)/D,j=Math.floor(f),u=f-j;
+  if(t>=A&&j<N+1){
+    const jj=Math.min(j,N-1),prev=Math.max(jj-1,0),m=j>=N?1:ep(u,0,.3);
+    const x=lerp(X(prev),X(jj),m)-10,h=lerp(82*prev+66,82*jj+66,m)+20;
+    Object.assign(c.box.style,{left:x+'px',top:'190px',width:'128px',height:h+'px'});
+    c.box.style.opacity=ep(t,A,A+.3)*(1-ep(t,A+N*D,A+N*D+.5));
+  }else c.box.style.opacity=0;
+  c.res.forEach((e,k)=>vis(e,ep(t,A+k*D+.35,A+k*D+.7),-10));
+  c.res2.forEach((e,k)=>e.style.opacity=ep(t,A+k*D+.35,A+k*D+.7));
+  vis(c.side,ep(t,10.4,11.2),0,-16);
+}});
+
+/* 7 两个细节 */
+SC.push({title:'两个细节',dur:26,caps:[
+  [.3,5,'两个细节。第一个：为什么一开始要放 freq[0] = 1？'],
+  [5.2,11.8,'从下标 0 开始的段，左边没有真实的前缀，只能对上空前缀。去掉它，nums[0..1] 和 nums[0..3] 就漏了，答案变成 4。'],
+  [12,18.5,'第二个：先查询，再记录。看 nums = [1]、k = 0，正确答案是 0。'],
+  [18.7,25.7,'如果先把当前前缀和放进表，再去查 temp_sum − 0，它会找到自己，等于数了一段空数组。']],
+build(r){
+  const c={},X=i=>210+100*(i+1),Y=p=>680-52*p;
+  c.L=H('div','card',{left:96,top:140,width:840,height:740},r);
+  c.R=H('div','card',{left:984,top:140,width:840,height:740},r);
+  c.l1=H('div','a hand',{left:136,top:164,fontSize:30},r,'细节一');
+  c.l2=H('div','a',{left:136,top:204,fontFamily:'var(--mono)',fontSize:44,fontWeight:700},r,'freq[0] = 1');
+  c.l3=H('div','a',{left:136,top:272,fontSize:24,color:'var(--graphite)'},r,'空前缀 P[−1] = 0，给从下标 0 开始的段当左端点');
+  c.l4=H('div','a hand',{left:136,top:318,fontSize:30},r,'如果去掉 freq[0] = 1 ……');
+  c.svg=S('svg',{class:'ov'},r);
+  c.G=buildChart(c.svg,{x:X,y:Y,lo:0,hi:6,gx0:196,gx1:880,r:9});
+  c.idx=[];for(let i=-1;i<N;i++)c.idx.push(S('text',{x:X(i),y:712,class:'lvl','text-anchor':'middle'},c.svg,fmt(i)));
+  c.br=[bracket(c.svg,X(-1),X(1),744,'var(--red)','nums[0..1]',1,20),bracket(c.svg,X(-1),X(3),770,'var(--red)','nums[0..3]',1,20)];
+  c.x=S('path',{d:`M${X(-1)-16} ${Y(0)-16} L${X(-1)+16} ${Y(0)+16} M${X(-1)+16} ${Y(0)-16} L${X(-1)-16} ${Y(0)+16}`,fill:'none'},c.svg);
+  Object.assign(c.x.style,{stroke:'var(--red)',strokeWidth:4,strokeLinecap:'round'});
+  c.cnt=H('div','a',{left:136,top:806,fontFamily:'var(--mono)',fontSize:34},r,'count = ');
+  c.c6=H('div','a',{left:300,top:796,fontFamily:'var(--num)',fontSize:48,lineHeight:1.1},r,'6');
+  c.strike=H('div','a',{left:292,top:826,width:0,height:4,background:'var(--red)',borderRadius:'2px'},r);
+  c.c4=H('div','a',{left:350,top:796,fontFamily:'var(--num)',fontSize:48,color:'var(--red)',lineHeight:1.1},r,'4');
+  c.c4n=H('div','a hand',{left:400,top:806,fontSize:32},r,'少算了 2 段');
+  // 右卡
+  c.r1=H('div','a hand',{left:1024,top:164,fontSize:30},r,'细节二');
+  c.r2=H('div','a',{left:1024,top:204,fontSize:44,fontWeight:700},r,'先查询，再记录');
+  c.r3=H('div','a',{left:1024,top:272,fontFamily:'var(--mono)',fontSize:26,color:'var(--graphite)'},r,'nums = [1]，k = 0，正确答案：0');
+  const col=(x,head,color,rows,res,resColor,resNote)=>{
+    const o={};
+    o.h=H('div','a',{left:x,top:336,fontSize:28,fontWeight:700,color},r,head);
+    o.rows=rows.map(([code,note],k)=>{
+      const g=H('div','a',{left:x,top:400+100*k,width:360},r);
+      H('div',null,{fontFamily:'var(--mono)',fontSize:26},g,code);
+      if(note)H('div','hand',{fontSize:24,marginTop:'4px',color:'var(--graphite)'},g,note);
+      return g;
+    });
+    o.res=H('div','a',{left:x,top:712,fontFamily:'var(--mono)',fontSize:34,color:resColor},r,res);
+    o.note=resNote?H('div','a hand',{left:x,top:766,fontSize:28},r,resNote):null;
+    o.mk=H('div','mk',{left:x-10,top:396,width:370,height:42,opacity:0},r);
+    return o;
+  };
+  c.A=col(1024,'✓ 先查再记','var(--blue)',[['temp_sum = 1',''],['find(1 − 0 = 1)','表里只有 {0:1}，没找到'],['freq[1]++','表变成 {0:1, 1:1}']],'count = 0','var(--blue)',null);
+  c.B=col(1424,'✗ 先记再查','var(--red)',[['temp_sum = 1',''],['freq[1]++','表变成 {0:1, 1:1}'],['find(1 − 0 = 1)','找到的是刚放进去的自己']],'count = 1','var(--red)','多算了一段空数组');
+  return c;
+},
+update(c,t){
+  const G=c.G;
+  vis(c.l1,ep(t,.2,.8),8);vis(c.l2,ep(t,.3,.9),8);vis(c.l3,ep(t,.5,1.1),8);
+  G.lv.forEach(g=>g.style.opacity=ep(t,.6,1.2));c.idx.forEach(e=>e.style.opacity=ep(t,.6,1.2));
+  const off=ep(t,6,6.8);
+  G.pts[0].style.opacity=ep(t,.8,1.1)*(1-.65*off);G.vals[0].style.opacity=ep(t,.8,1.1)*(1-.65*off);
+  for(let i=0;i<N;i++){G.segs[i].set(ep(t,.9+.2*i,1.2+.2*i));G.pts[i+1].style.opacity=ep(t,1.1+.2*i,1.3+.2*i);G.vals[i+1].style.opacity=ep(t,1.1+.2*i,1.3+.2*i);}
+  c.br[0].set(ep(t,2.6,3.4),ep(t,3.1,3.5));c.br[1].set(ep(t,3.2,4.2),ep(t,3.8,4.2));
+  const brOff=ep(t,7,8);c.br.forEach(b=>{b.g.style.opacity=1-.75*brOff;});
+  vis(c.l4,ep(t,5.4,6),8);
+  c.x.style.opacity=ep(t,6.2,6.6);
+  vis(c.cnt,ep(t,4.6,5.1),8);vis(c.c6,ep(t,4.6,5.1),8);
+  c.strike.style.width=(44*ep(t,8.6,9.1))+'px';
+  vis(c.c4,ep(t,9.1,9.5),-10);vis(c.c4n,ep(t,9.6,10.2),8);
+  // 右卡
+  vis(c.r1,ep(t,12,12.6),8);vis(c.r2,ep(t,12.1,12.7),8);vis(c.r3,ep(t,12.5,13.1),8);
+  const run=(o,t0)=>{
+    vis(o.h,ep(t,t0-.4,t0),8);
+    let act=-1;
+    o.rows.forEach((g,k)=>{const a=t0+1.2*k;vis(g,ep(t,a,a+.45),8);if(t>=a)act=k;});
+    const done=t0+3.6;
+    if(act>=0&&t<done+.3){o.mk.style.top=(396+100*act)+'px';o.mk.style.opacity=.85;}else o.mk.style.opacity=0;
+    vis(o.res,ep(t,done,done+.5),8);if(o.note)vis(o.note,ep(t,done+.6,done+1.1),8);
+  };
+  run(c.A,13.6);run(c.B,19);
+}});
+
+/* 8 代价 */
+SC.push({title:'代价',dur:20,caps:[
+  [.3,6,'代价是多了一张哈希表：额外空间从 O(1) 变成 O(n)。'],
+  [6.2,12.5,'换来的是：n = 20000 时，两亿次加法变成两万次查表。'],
+  [12.7,19.7,'另外，数组里有负数，所以这题用不了滑动窗口；前缀和最大 2×10⁷，int 放得下。']],
+build(r){
+  const c={};
+  c.h=[H('div','a',{left:400,top:190,fontSize:24,color:'var(--graphite)'},r,'原来'),H('div','a',{left:640,top:190,fontSize:24,color:'var(--graphite)'},r,'优化后')];
+  const rows=[['时间','O(n<sup style="font-size:.58em;line-height:0">2</sup>)','O(n) <span style="font:22px var(--body);color:var(--graphite)">平均</span>',true],['额外空间','O(1)','O(n)',true],['内层在做什么','逐个累加','查一次哈希表',false]];
+  c.rows=rows.map(([a,b,d,mono],k)=>{
+    const y=240+86*k,g=H('div','a',{left:96,top:y,width:820,height:86,borderTop:'1.5px solid rgba(27,38,49,.14)'},r);
+    H('div','a',{left:0,top:24,fontSize:28},g,a);
+    H('div','a',{left:304,top:mono?18:24,fontFamily:mono?'var(--mono)':'var(--body)',fontSize:mono?38:28},g,b);
+    H('div','a',{left:544,top:mono?18:24,fontFamily:mono?'var(--mono)':'var(--body)',fontSize:mono?38:28,color:'var(--blue)'},g,d);
+    return g;
+  });
+  c.notes=['unordered_map 查找平均 O(1)，哈希冲突严重时会退化。','有负数：窗口变长，和不一定变大，所以滑动窗口用不了。','|前缀和| ≤ 2×10⁴ × 1000 = 2×10⁷，int 放得下。']
+    .map((s,k)=>H('div','a',{left:96,top:560+56*k,fontSize:25,color:'var(--graphite)'},r,'<span style="color:var(--red)">·</span> '+s));
+  c.svg=S('svg',{class:'ov'},r);
+  const defs=S('defs',{},c.svg),pat=S('pattern',{id:'dots8',width:14,height:14,patternUnits:'userSpaceOnUse'},defs);
+  const dc=S('circle',{cx:7,cy:7,r:2.2},pat);dc.style.fill='var(--graphite)';dc.style.opacity=.55;
+  c.tri=S('path',{d:'M1060 222 L1760 222 L1760 782 Z',fill:'url(#dots8)'},c.svg);
+  Object.assign(c.tri.style,{stroke:'var(--graphite)',strokeWidth:1.5,transformOrigin:'100% 0%'});
+  c.edge=drawable(S('line',{x1:1060,y1:208,x2:1760,y2:208,class:'seg'},c.svg));c.edge.el.style.strokeWidth=9;
+  c.bl=H('div','a',{left:1060,top:130},r,'<span style="font:48px/1 var(--num);color:var(--blue)">20,000</span> <span style="font-size:24px;color:var(--blue)">次查表（每列一次）</span>');
+  c.big=H('div','a',{left:1060,top:500},r,'<div style="font-size:24px;color:var(--graphite)">n = 20000 时</div><div style="font:60px/1.15 var(--num)">200,010,000</div><div style="font-size:24px;color:var(--graphite)">次加法（三角形里每一格）</div>');
+  c.ratio=H('div','a hand',{left:1060,top:682,fontSize:38},r,'差了一万倍');
+  return c;
+},
+update(c,t){
+  c.h.forEach(e=>vis(e,ep(t,.2,.7),8));
+  c.rows.forEach((g,k)=>vis(g,ep(t,.4+.5*k,.9+.5*k),10));
+  const tp=ep(t,3,5);c.tri.style.opacity=tp;c.tri.style.transform=`scale(${.9+.1*tp})`;
+  vis(c.big,ep(t,5.4,6.2),10);
+  c.edge.set(ep(t,7,8.4));vis(c.bl,ep(t,8.2,9),10);
+  vis(c.ratio,ep(t,10.4,11.1),10);
+  c.notes.forEach((e,k)=>vis(e,ep(t,12.8+1.1*k,13.4+1.1*k),10));
+}});
+
+/* 9 收尾 */
+SC.push({title:'一句话',dur:8,caps:[],
+build(r){
+  const c={};
+  c.a=H('div','a',{left:156,top:270,fontFamily:'var(--display)',fontSize:84,fontWeight:900,lineHeight:1.3},r,'固定右端点，');
+  c.b=H('div','a',{left:156,top:384,fontFamily:'var(--display)',fontSize:84,fontWeight:900,lineHeight:1.3},r,'一次查表数完所有左端点。');
+  c.c=H('div','a',{left:164,top:548,fontFamily:'var(--mono)',fontSize:46},r,'count += freq[<span style="color:var(--blue)">P[j] − k</span>];');
+  c.d=H('div','a hand',{left:164,top:640,fontSize:36},r,'内层循环 → 一次哈希查询　　O(n²) → O(n)');
+  c.e=H('div','a',{left:164,top:760,fontSize:22,color:'var(--graphite)'},r,'LC 560 · 例子：nums = [1, 2, −2, 2, 1, 2]，k = 3，答案 6');
+  return c;
+},
+update(c,t){vis(c.a,ep(t,.2,1),20);vis(c.b,ep(t,.6,1.4),20);vis(c.c,ep(t,1.6,2.3),12);vis(c.d,ep(t,2.4,3.1),12);vis(c.e,ep(t,3,3.6),0);}
+});
+
+/* ================= 时间轴 ================= */
+let TOTAL=0;SC.forEach(s=>{s.t0=TOTAL;TOTAL+=s.dur;});
+const CAPS=[];SC.forEach(s=>s.caps.forEach(([a,b,x])=>CAPS.push([s.t0+a,s.t0+b,x])));
+const stage=document.getElementById('stage'),sceneEl=document.getElementById('scene'),chap=document.getElementById('chap');
+const capEl=document.getElementById('cap'),capSpan=capEl.firstElementChild,progFill=document.getElementById('progFill');
+SC.forEach((s,i)=>{if(i)H('div','tick',{left:s.t0/TOTAL*1920-1},document.getElementById('prog'));});
+let cur=-1,ctx=null;
+function seek(t){
+  t=clamp(t,0,TOTAL-1e-3);
+  const i=SC.findIndex(s=>t<s.t0+s.dur),s=SC[i],lt=t-s.t0;
+  if(i!==cur){sceneEl.innerHTML='';cur=i;ctx=s.build(sceneEl);chap.textContent=`${String(i+1).padStart(2,'0')} / ${String(SC.length).padStart(2,'0')}　${s.title}`;}
+  const fin=i===SC.length-1?1:1-pr(lt,s.dur-.45,s.dur);
+  sceneEl.style.opacity=Math.min(pr(lt,0,.45),fin);
+  s.update(ctx,lt);
+  const cp=CAPS.find(c=>t>=c[0]&&t<c[1]);
+  if(cp){if(capSpan.textContent!==cp[2])capSpan.textContent=cp[2];capEl.style.opacity=Math.min(pr(t,cp[0],cp[0]+.25),1-pr(t,cp[1]-.25,cp[1]));}
+  else capEl.style.opacity=0;
+  progFill.style.width=(t/TOTAL*100)+'%';
+  return i;
+}
+window.__seek=seek;window.__total=TOTAL;
+
+/* ================= 播放器 ================= */
+const wrap=document.getElementById('wrap'),holder=document.getElementById('holder');
+function fit(){
+  const sc=CAPTURE?1:Math.min(wrap.clientWidth/1920,wrap.clientHeight/1080);
+  holder.style.width=1920*sc+'px';holder.style.height=1080*sc+'px';stage.style.transform=`scale(${sc})`;
+}
+fit();addEventListener('resize',fit);
+if(CAPTURE){
+  const m=location.search.match(/[?&]t=([\d.]+)/);seek(m?+m[1]:0);
+  return;
+}
+const playBtn=document.getElementById('play'),timeEl=document.getElementById('time'),seekEl=document.getElementById('seek');
+const speedBtn=document.getElementById('speed'),chapWrap=document.getElementById('chapters');
+const ICON_PLAY='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>';
+const ICON_PAUSE='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>';
+seekEl.max=TOTAL;
+const chapBtns=SC.map((s,i)=>{const b=H('button',null,null,chapWrap,`${i+1} ${s.title}`);b.addEventListener('click',()=>{T=s.t0+.01;});return b;});
+const speeds=[1,1.25,1.5,.75];let si=0;
+let playing=true,T=0,last=null,dragging=false,shownIcon=null;
+const mmss=x=>{x=Math.max(0,Math.floor(x));return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');};
+function toggle(){if(T>=TOTAL-.05)T=0;playing=!playing;}
+playBtn.addEventListener('click',toggle);
+stage.addEventListener('click',toggle);
+speedBtn.addEventListener('click',()=>{si=(si+1)%speeds.length;speedBtn.textContent=speeds[si]+'×';});
+seekEl.addEventListener('input',()=>{T=+seekEl.value;dragging=true;});
+seekEl.addEventListener('change',()=>{dragging=false;});
+addEventListener('keydown',e=>{
+  if(e.target===seekEl&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
+  if(e.key===' '){e.preventDefault();toggle();}
+  else if(e.key==='ArrowLeft')T=Math.max(0,T-5);
+  else if(e.key==='ArrowRight')T=Math.min(TOTAL,T+5);
+  else if(/^[1-9]$/.test(e.key)&&SC[+e.key-1])T=SC[+e.key-1].t0+.01;
+});
+function frame(now){
+  if(last!==null&&playing&&!dragging){T+=(now-last)/1000*speeds[si];if(T>=TOTAL){T=TOTAL;playing=false;}}
+  last=now;
+  const i=seek(T);
+  if(!dragging)seekEl.value=T;
+  timeEl.textContent=mmss(T)+' / '+mmss(TOTAL);
+  const want=playing?'pause':'play';
+  if(shownIcon!==want){playBtn.innerHTML=playing?ICON_PAUSE:ICON_PLAY;shownIcon=want;}
+  chapBtns.forEach((b,k)=>b.classList.toggle('on',k===i));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
