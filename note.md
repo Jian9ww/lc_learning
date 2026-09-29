@@ -4,6 +4,24 @@
 
 每条记录保留：使用场景、来源题目、关键写法、易错点、复杂度。只把能解释清楚的内容标为已掌握。
 
+代码优化约定：保留自己写出的原始解法，可以完整注释后放在优化版上方；新增优化版并说明思路如何变化，方便对比。不要直接覆盖原解法。
+
+学习进度（2026-09-29）：Day01 / 01_hash 的 LC217、LC1、LC49、LC128、LC560 已全部完成。题目完成依据学习者确认；下面的知识点自查项仍由自己复习后勾选。
+
+## 哈希专题复习索引
+
+| 题目 | 哈希表保存什么 | 关键动作 | 笔记 |
+| --- | --- | --- | --- |
+| [LC217](Day01_hash_array_matrix/01_hash/lc_217.cpp) | 已出现的数字 | 查询存在，再插入 | [集合基础](#hash-set) |
+| [LC1](Day01_hash_array_matrix/01_hash/lc_1.cpp) | 数字 → 下标 | 查补数，再记录当前下标 | [映射基础](#hash-map) |
+| [LC49](Day01_hash_array_matrix/01_hash/lc_49.cpp) | 排序字符串 → 原字符串组 / 组下标 | 统一分组键，再追加原字符串 | [分组映射](#anagram-groups) |
+| [LC128](Day01_hash_array_matrix/01_hash/lc_128.cpp) | 去重后的数字 | 没有前驱才向右扩展 | [序列起点](#sequence-start) |
+| [LC560](Day01_hash_array_matrix/01_hash/lc_560.cpp) | 旧前缀和 → 出现次数 | 查 `temp_sum - k`，再记录当前前缀 | [前缀和计数](#prefix-hash) |
+
+接下来学习 [Day01 / 数组技巧](Day01_hash_array_matrix/02_array/README.md)。
+
+<a id="hash-set"></a>
+
 ## 1. unordered_set：记录“某个值是否出现过”
 
 首次记录：2026-09-28。
@@ -100,6 +118,8 @@ if (!seen.insert(x).second) {
 - [ ] 能解释 `count` 为什么只能返回 0 或 1。
 - [ ] 能解释为什么先查再插。
 - [ ] 能说明平均 O(1) 的查找为什么仍有最坏 O(n) 的情况。
+
+<a id="hash-map"></a>
 
 ## 2. unordered_map：记录“键 → 值”的对应关系
 
@@ -280,6 +300,213 @@ for (auto it = mp.begin(); it != mp.end(); ) {
 - [ ] 能区分 `[] = v` 和 `insert` / `emplace` 对已有键的行为。
 - [ ] 能用 `{3, 3}` 解释为什么先查补数再插入。
 - [ ] 能区分 `freq.count(x)` 与 `freq[x]`，并说明平均与最坏复杂度。
+
+<a id="prefix-hash"></a>
+
+## 3. 前缀和 + 哈希计数：和为 K 的子数组
+
+首次记录：2026-09-29。
+
+来源：[LC560 和为 K 的子数组](Day01_hash_array_matrix/01_hash/lc_560.cpp)。
+
+复习使用自己制作的 [LC560 可视化材料](Day01_hash_array_matrix/01_hash/lc_560_visual/README.md)：
+
+- [HTML 网页演示](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_prefix_sum.html)：本地双击打开；空格播放/暂停，左右方向键快进/快退，数字键 1–9 跳章节。
+- [MP4 视频](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_prefix_sum.mp4)。
+- [GIF：查表代替内层循环](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_hash_steps.gif)。
+
+![LC560 哈希查询过程](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_hash_steps.gif)
+
+演示使用 `nums = [1, 2, -2, 2, 1, 2]`、`k = 3`，答案为 6，包含负数与重复前缀和。动画记号 `P[j]` 表示 `nums[0..j]` 的和，`P[-1] = 0` 是空前缀的数学约定；下面用 `prefix[t]` 表示前 t 个数的和，所以 `P[j] = prefix[j + 1]`。两种写法都通过两个前缀的差计算区间和。
+
+### 从原来的双层循环出发
+
+原写法固定起点 i，再向后累加每个终点，枚举约 n(n+1)/2 个子数组，时间 O(n²)。
+
+优化后固定当前终点，把“哪些起点能产生和为 k 的子数组”转化为查找之前的前缀和。
+
+设 `prefix[t]` 是前 t 个元素的和，`prefix[0] = 0`，那么：
+
+```text
+nums[left..i] 的和 = prefix[i + 1] - prefix[left]
+要等于 k，就需要 prefix[left] = prefix[i + 1] - k
+```
+
+代码里的 `temp_sum` 就是 `prefix[i + 1]`。不必保存整个前缀和数组，只需要累计值和哈希表。
+
+### 哈希表保存什么
+
+`unordered_map<int, int> freq` 保存“前缀和 → 出现次数”。查询前，表里只记录当前终点之前的前缀。
+
+```cpp
+int count = 0;
+int temp_sum = 0;
+unordered_map<int, int> freq;
+freq[0] = 1;
+
+for (int x : nums) {
+    temp_sum += x;
+    auto it = freq.find(temp_sum - k);
+    if (it != freq.end()) {
+        count += it->second;
+    }
+    ++freq[temp_sum];
+}
+```
+
+`find` 读取已有次数，不插入缺失的键；`++freq[temp_sum]` 使用 `[]` 计数，键不存在时从默认值 0 增加到 1。
+
+### 手推 nums = {1, 1, 1}，k = 2
+
+最开始只有 `freq[0] = 1`。
+
+| i | temp_sum | 要找的 temp_sum - k | 之前出现次数 | 累计答案 |
+| --- | --- | --- | --- | --- |
+| 0 | 1 | -1 | 0 | 0 |
+| 1 | 2 | 0 | 1 | 1 |
+| 2 | 3 | 1 | 1 | 2 |
+
+每行查询结束后，再把当前 `temp_sum` 的次数加一。答案 2 对应下标区间 `[0, 1]` 和 `[1, 2]`。
+
+### 为什么有这三个细节
+
+1. **`freq[0] = 1`**：代表数组开始前的空前缀。如果当前累加和本身等于 k，就需要通过它统计从下标 0 开始的子数组。
+2. **加次数，不是只加 1**：不同位置可以有相同前缀和，它们代表不同起点。例如 `{0, 0}`、k = 0，两个终点分别贡献 1 和 2，答案是 3。仅用 set 判断存在会漏算。
+3. **先查再记录当前前缀**：如果先记录，k = 0 时会把当前前缀与自己相减，误算一个长度为 0 的子数组。
+
+注意 `freq.count(s)` 只表示键 s 是否存在，返回 0 或 1；我们要的次数是 `it->second` 或已存在键对应的 `freq[s]`。
+
+### 复杂度与适用范围
+
+平均时间 O(n)，额外空间 O(n)；哈希冲突严重时最坏时间仍可能为 O(n²)。这是用空间减少重复枚举。
+
+负数和 0 都可以处理。因为数组允许负数，不能直接套用“和大了就收缩窗口”的滑动窗口规则。
+
+### 自查
+
+- [ ] 能从两个前缀和之差推导出要查询 `temp_sum - k`。
+- [ ] 能解释为什么用 map 存次数，而不是用 set 存存在性。
+- [ ] 能解释初始化 0 和先查后记录的作用。
+
+<a id="anagram-groups"></a>
+
+## 4. 字符串排序 + 哈希分组：字母异位词
+
+记录日期：2026-09-29。来源：[LC49 字母异位词分组](Day01_hash_array_matrix/01_hash/lc_49.cpp)。
+
+### 为什么排序后能作为键
+
+两个字符串字母种类和数量都相同时，排序后的结果相同。例如 `eat`、`tea`、`ate` 都得到 `aet`，因此可以归到同一组。
+
+```cpp
+string key = strs[i];             // 复制原字符串
+sort(key.begin(), key.end());      // 只排序副本，用作分组键
+```
+
+原字符串作为答案保存；如果直接排序 `strs[i]`，原来的字母顺序就丢失了。
+
+### 代码里保留的两种思路
+
+| 思路 | 哈希表类型 | 保存内容 |
+| --- | --- | --- |
+| 第一种 | `unordered_map<string, vector<string>>` | 排序字符串 → 这一组的所有原字符串 |
+| 第二种 | `unordered_map<string, int>` | 排序字符串 → 结果数组中的组下标 |
+
+第一种直接向分组追加：
+
+```cpp
+hash_table[key].push_back(strs[i]);
+```
+
+键第一次出现时，`[]` 创建一个空 `vector<string>`，随后 `push_back` 加入原字符串；已有键时追加到同一组。
+
+C++14 中收集结果的写法：
+
+```cpp
+for (const auto& entry : hash_table) {
+    results.push_back(entry.second);
+}
+```
+
+第二种先找组下标，存在就追加，不存在就建立新组：
+
+```cpp
+auto it = strhashtable.find(key);
+if (it != strhashtable.end()) {
+    result[it->second].push_back(strs[i]);
+} else {
+    result.push_back({strs[i]});
+    strhashtable[key] = result.size() - 1;
+}
+```
+
+`result.push_back({strs[i]})` 创建一个只含当前字符串的新组；`result.size() - 1` 是新组下标。
+
+### 易错点和当前代码整理项
+
+- 第一种方案遍历哈希表时不保证组间顺序；第二种按第一次遇到各组的顺序建立结果。判断分组是否正确时，应按题目要求处理输出顺序。
+- `for (const auto& [key, vec] : hash_table)` 是 C++17 结构化绑定。当前 C++14 配置应使用上面的 `entry.second`。
+- 当前文件中两份 `groupAnagrams` 的函数签名相同。运行前将其中一份完整注释保存，只启用一份；不能用同一个签名同时定义两次。这里记录整理项，保留源码中的两种原始写法。
+
+### 复杂度与自查
+
+设有 N 个字符串，最大长度为 L。排序是主要开销，平均时间通常记为 O(N·L·log L)，字符串哈希和复制还需要 O(N·L)；计入保存的分组字符串，空间为 O(N·L)。
+
+- [ ] 能解释为什么相同排序结果对应同一组。
+- [ ] 能区分“键 → 分组”与“键 → 组下标”两种设计。
+- [ ] 能说明 `[]` 如何创建空 vector，并写出 C++14 遍历方式。
+
+<a id="sequence-start"></a>
+
+## 5. 集合去重 + 只从起点扩展：最长连续序列
+
+记录日期：2026-09-29。来源：[LC128 最长连续序列](Day01_hash_array_matrix/01_hash/lc_128.cpp)。
+
+### 集合保存什么
+
+`unordered_set<int> hash_set` 保存数组中的不同数字。这里的“连续”指数字连续，例如 1、2、3、4，不要求它们在原数组中相邻。
+
+```cpp
+for (int x : nums) {
+    hash_set.insert(x);
+}
+```
+
+去重后遍历集合，重复输入不会触发多次相同的起点扫描。
+
+### 为什么只从没有前驱的数开始
+
+```cpp
+if (hash_set.find(num - 1) == hash_set.end()) {
+    int temp = 1;
+    int num_right = num + 1;
+    while (hash_set.find(num_right) != hash_set.end()) {
+        ++temp;
+        ++num_right;
+    }
+    count = max(count, temp);
+}
+```
+
+如果 `num - 1` 存在，num 就在某条连续序列内部；等扫描到这条序列的起点时，它会一起被统计。
+
+以 `{100, 4, 200, 1, 3, 2}` 为例，只有 1、100、200 没有前驱。从 1 扩展得到 1、2、3、4，长度为 4；2、3、4 不会再次向右扫描。
+
+### 有 while，为什么平均还是 O(n)
+
+设去重后有 m 个数。外层做 m 次前驱查询，各个起点的内层扫描处理互不重叠的连续序列。所有序列的长度加起来只有 m，因此总查询次数是 O(m)，不会对每个数都重复扫描整条序列。
+
+包含建表的平均时间为 O(n)，额外空间 O(n)；哈希操作在最坏情况下退化时，整体最坏仍可达 O(n²)。
+
+### 易错点与自查
+
+- 必须有“前驱不存在”的判断，否则长序列可能被从各个位置重复扫描。
+- 扩展时 `num_right` 每轮增加，不能一直查同一个数字。
+- 当前代码先处理空数组，返回 0；非空时单个元素的序列长度为 1。
+
+- [ ] 能解释连续序列和原数组中连续下标的区别。
+- [ ] 能说明为什么遍历去重后的集合。
+- [ ] 能用“每条序列只从起点展开一次”解释平均 O(n)。
 
 ## 后续笔记模板
 

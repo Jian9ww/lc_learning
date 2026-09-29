@@ -30,7 +30,11 @@
 - 换电脑前：用 `git status` 检查变更，添加本次需要同步的文件，`git commit` 后再 `git push`；另一台电脑先拉取再继续。
 - 配合方式：以当前题目为单位讲解和复盘，常用 API 按数据结构归纳；“完成题目”和“已掌握知识点”分别记录，笔记自查项由学习者确认。
 
-当前进度（2026-09-29）：已完成 [LC1 两数之和](Day01_hash_array_matrix/01_hash/lc_1.cpp)，已补充 `unordered_map` 笔记；哈希专题其余进度见[练习清单](Day01_hash_array_matrix/01_hash/README.md)。
+当前进度（2026-09-29）：[Day01 / 哈希](Day01_hash_array_matrix/01_hash/README.md) 已完成，包含 LC217、LC1、LC49、LC128、LC560，共 5/5 题。完成状态依据学习者确认；知识点自查单独保留在 [note.md](note.md)。
+
+下一步：[Day01 / 数组技巧](Day01_hash_array_matrix/02_array/README.md)。Day01 的矩阵专题仍待完成。
+
+LC560 复习使用学习者提供的 [可视化材料](Day01_hash_array_matrix/01_hash/lc_560_visual/README.md)：[HTML 演示](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_prefix_sum.html)、[视频](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_prefix_sum.mp4)、[GIF](Day01_hash_array_matrix/01_hash/lc_560_visual/lc560_hash_steps.gif)。LC49 的本地运行前整理项见哈希专题清单。
 
 ## 练习方式
 
