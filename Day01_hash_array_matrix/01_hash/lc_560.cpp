@@ -10,6 +10,7 @@ public:
         int n = nums.size();
         int count = 0;
         for(int i = 0; i < n; i++){
+            int cur_num = nums[i];
             int temp_sum = 0;
             int j = i;
             while(j < n){
