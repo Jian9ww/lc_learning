@@ -1,0 +1,87 @@
+{
+  "lc41": {
+    "scenes": "scenes/lc41.js",
+    "out": "Day01_hash_array_matrix/02_array/lc_41_visual/lc41_sign_mark.html",
+    "title": "LC41 原地标记讲解",
+    "header": "<b>LC 41</b>　缺失的第一个正数",
+    "css": ".cell.neg{color:var(--red);border-color:var(--red);background:rgba(207,53,40,.09)}"
+  },
+  "lc54": {
+    "scenes": "scenes/lc54.js",
+    "out": "Day01_hash_array_matrix/03_matrix/lc_54_visual/lc54_spiral.html",
+    "title": "LC54 螺旋矩阵讲解",
+    "header": "<b>LC 54</b>　螺旋矩阵 · 解法二",
+    "css": ".cell.on{color:var(--blue);border-color:var(--blue);background:rgba(221,227,243,.94)}"
+  },
+  "lc73": {
+    "scenes": "scenes/lc73.js",
+    "out": "Day01_hash_array_matrix/03_matrix/lc_73_visual/lc73_set_zeroes.html",
+    "title": "LC73 矩阵置零讲解",
+    "header": "<b>LC 73</b>　矩阵置零",
+    "css": ".cell.z{color:var(--red);border-color:var(--red);background:rgba(250,225,222,.97)}.cell.mark{color:var(--blue);border-color:var(--blue);background:rgba(221,227,243,.97)}.cell.clr{color:var(--graphite);border-color:var(--faint);background:rgba(222,226,229,.97)}"
+  },
+  "lc48": {
+    "scenes": "scenes/lc48.js",
+    "out": "Day01_hash_array_matrix/03_matrix/lc_48_visual/lc48_rotate.html",
+    "title": "LC48 旋转图像讲解",
+    "header": "<b>LC 48</b>　旋转图像",
+    "css": ".cell.r0{color:var(--blue);border-color:var(--blue);background:rgba(221,227,243,.97)}.cell.r1{color:#7A5A00;border-color:#B8860B;background:rgba(251,240,196,.97)}.cell.r2{color:var(--red);border-color:var(--red);background:rgba(250,225,222,.97)}.cell.hot{box-shadow:0 0 0 6px var(--ink)}"
+  },
+  "lc240": {
+    "scenes": "scenes/lc240.js",
+    "out": "Day01_hash_array_matrix/03_matrix/lc_240_visual/lc240_search.html",
+    "title": "LC240 搜索二维矩阵 II 讲解",
+    "header": "<b>LC 240</b>　搜索二维矩阵 II",
+    "css": ".cell.out{color:var(--faint);border-color:var(--faint);background:rgba(222,226,229,.6)}.cell.on{color:#fff;border-color:var(--blue);background:var(--blue)}"
+  },
+  "hw21_1": {
+    "scenes": [
+      "scenes/hw21_common.js",
+      "scenes/hw21_1.js"
+    ],
+    "out": "ACM_test/HW/21_visual/hw21_1_reading.html",
+    "title": "HW21 第 1 集：读题",
+    "header": "<b>HW 21</b>　核心路由器管理域规划 · 第 1 集　读题",
+    "css": ""
+  },
+  "hw21_2": {
+    "scenes": [
+      "scenes/hw21_common.js",
+      "scenes/hw21_2.js"
+    ],
+    "out": "ACM_test/HW/21_visual/hw21_2_concepts.html",
+    "title": "HW21 第 2 集：质心、SSE 和下降量",
+    "header": "<b>HW 21</b>　核心路由器管理域规划 · 第 2 集　质心、SSE 和下降量",
+    "css": ""
+  },
+  "hw21_3": {
+    "scenes": [
+      "scenes/hw21_common.js",
+      "scenes/hw21_3.js"
+    ],
+    "out": "ACM_test/HW/21_visual/hw21_3_kmeans.html",
+    "title": "HW21 第 3 集：K-means 把一个簇拆成两个",
+    "header": "<b>HW 21</b>　核心路由器管理域规划 · 第 3 集　K-means 把一个簇拆成两个",
+    "css": ""
+  },
+  "hw21_4": {
+    "scenes": [
+      "scenes/hw21_common.js",
+      "scenes/hw21_4.js"
+    ],
+    "out": "ACM_test/HW/21_visual/hw21_4_bisecting.html",
+    "title": "HW21 第 4 集：Bi-K-means 全流程",
+    "header": "<b>HW 21</b>　核心路由器管理域规划 · 第 4 集　Bi-K-means 全流程",
+    "css": ""
+  },
+  "hw21_5": {
+    "scenes": [
+      "scenes/hw21_common.js",
+      "scenes/hw21_5.js"
+    ],
+    "out": "ACM_test/HW/21_visual/hw21_5_code.html",
+    "title": "HW21 第 5 集：代码逐段讲解",
+    "header": "<b>HW 21</b>　核心路由器管理域规划 · 第 5 集　代码逐段讲解",
+    "css": ""
+  }
+}

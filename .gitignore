@@ -16,3 +16,16 @@ build/
 *~
 .DS_Store
 Thumbs.db
+
+# 讲解视频和动图只留在本地；Git 里保留网页版动画（.html）和文字讲解
+*.mp4
+*.gif
+
+# Python 缓存
+__pycache__/
+
+# 渲染视频时的临时文件（用完会自动删除）
+tools/video/.tmp/
+
+# 机试题目的截图只留在本地，题目内容已转写进讲解
+ACM_test/**/*.jpg

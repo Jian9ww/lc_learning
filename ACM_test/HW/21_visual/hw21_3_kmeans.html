@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HW21 第 3 集：K-means 把一个簇拆成两个</title>
+<!-- 本地直接双击打开即可播放；不依赖网络。空格 播放/暂停，← → 快退/快进 5 秒，数字键 1-9 跳章节。 -->
+<style>
+/* 版式：作业本方格纸 + 蓝色圆珠笔 + 红笔批改 + 黄色荧光笔；1920×1080 固定舞台，按窗口等比缩放 */
+:root{
+  --paper:#F4F5F0; --gridA:#E5E9EA; --gridB:#D6DDE1;
+  --ink:#1B2631; --graphite:#66707A; --faint:#AFB7BD; --card:rgba(255,255,255,.64);
+  --blue:#2451C4; --blue-soft:rgba(36,81,196,.09);
+  --red:#CF3528; --marker:#FFE14D;
+  --display:"Noto Serif SC","Source Han Serif SC","STSong",serif;
+  --body:"Noto Sans SC","Microsoft YaHei","PingFang SC",sans-serif;
+  --hand:"KaiTi","STKaiti","楷体",serif;
+  --mono:"Cascadia Mono","Maple Mono NF CN",Consolas,monospace;
+  --num:"Bahnschrift","DIN Alternate","Segoe UI",sans-serif;
+  --chrome:#1D2125; --chrome-line:#383E44; --chrome-fg:#E6E8EA; --chrome-dim:#97A0A8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--chrome);overflow:hidden}
+#wrap{position:absolute;left:0;right:0;top:0;bottom:64px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#holder{position:relative;flex:none}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--gridB) 1px,transparent 1px),linear-gradient(90deg,var(--gridB) 1px,transparent 1px),
+    linear-gradient(var(--gridA) 1px,transparent 1px),linear-gradient(90deg,var(--gridA) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;background-position:-1px -1px;
+  font-family:var(--body);color:var(--ink);cursor:pointer}
+body.capture #wrap{bottom:0} body.capture #bar{display:none} body.capture #stage{cursor:default}
+#scene{position:absolute;inset:0}
+.a{position:absolute;white-space:nowrap}
+.cell{position:absolute;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);background:rgba(255,255,255,.72);
+  font-family:var(--num);border-radius:5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ghost{position:absolute;border:1.5px dashed var(--faint);border-radius:5px}
+.idx{font-family:var(--mono);color:var(--graphite);text-align:center}
+.hand{font-family:var(--hand);color:var(--red)}
+.mk{position:absolute;background:var(--marker);mix-blend-mode:multiply;border-radius:8px}
+.dot{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--blue)}
+.card{position:absolute;background:var(--card);border:1.5px solid rgba(27,38,49,.16);border-radius:10px}
+.code{position:absolute;background:rgba(255,255,255,.74);border:1.5px solid rgba(27,38,49,.18);border-radius:8px;padding:16px 24px 20px;font-family:var(--mono);color:var(--ink)}
+.code-title{font-family:var(--body);font-size:20px;color:var(--graphite);letter-spacing:.06em;margin-bottom:8px;line-height:1.5}
+.code .cl{white-space:pre;position:relative}
+.code-hl{position:absolute;left:12px;right:12px;background:var(--marker);mix-blend-mode:multiply;border-radius:4px;opacity:0}
+.kw{color:var(--blue)}
+svg.ov{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible;pointer-events:none}
+svg text{font-family:var(--mono)}
+svg circle,svg path,svg line{transform-box:fill-box;transform-origin:center}
+.lv{stroke:var(--gridB);stroke-width:1.5}
+.lv.zero{stroke:var(--faint);stroke-width:2}
+.lvl{fill:var(--graphite);font-size:20px}
+.seg{stroke:var(--blue);stroke-width:4;stroke-linecap:round;fill:none}
+.pt{fill:var(--blue);stroke:var(--paper);stroke-width:3}
+.pt.virt{fill:var(--paper);stroke:var(--blue);stroke-width:3.5}
+.pv{fill:var(--blue);font-family:var(--num);font-size:22px;text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+.halo{paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+.target{stroke:var(--red);stroke-width:2.5;stroke-dasharray:9 7}
+.ring{fill:none;stroke:var(--blue);stroke-width:3}
+.hs{font-family:var(--hand);fill:var(--red);font-size:26px}
+#hdr,#chap{position:absolute;top:42px;font-size:22px;color:var(--graphite);letter-spacing:.06em}
+#hdr{left:96px} #chap{right:96px;text-align:right}
+#hdr b{color:var(--ink);font-weight:600}
+#cap{position:absolute;left:120px;right:120px;bottom:40px;text-align:center;pointer-events:none}
+#cap span{display:inline-block;max-width:1640px;font-size:34px;line-height:1.55;padding:10px 26px;background:rgba(244,245,240,.95);
+  border-radius:6px;color:var(--ink);text-wrap:balance;box-shadow:0 0 0 1px rgba(27,38,49,.08)}
+#prog{position:absolute;left:0;bottom:0;height:5px;width:100%;background:var(--gridB)}
+#progFill{height:100%;background:var(--ink);width:0}
+.tick{position:absolute;top:0;width:3px;height:5px;background:var(--paper)}
+
+#bar{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--chrome-fg);font:14px var(--body)}
+#bar button{background:none;border:1px solid var(--chrome-line);color:var(--chrome-fg);border-radius:6px;height:34px;padding:0 12px;font:inherit;cursor:pointer;flex:none}
+#bar button:hover{border-color:#6A737C}
+#bar button:focus-visible,#seek:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+#play{width:46px;display:flex;align-items:center;justify-content:center}
+#play svg{width:16px;height:16px;fill:currentColor}
+#time{font-variant-numeric:tabular-nums;color:var(--chrome-dim);flex:none;min-width:98px}
+#seek{flex:1;min-width:80px;accent-color:#F2D24B}
+#chapters{display:flex;gap:6px;overflow-x:auto;max-width:52%;flex:none;scrollbar-width:none}
+#chapters button{height:28px;padding:0 8px;font-size:12px;color:var(--chrome-dim);white-space:nowrap}
+#chapters button.on{color:var(--chrome-fg);border-color:#F2D24B}
+@media (max-width:900px){#chapters{display:none}}
+@media (prefers-reduced-motion:reduce){#cap span{transition:none}}
+
+</style>
+</head>
+<body>
+<div id="wrap"><div id="holder"><div id="stage">
+  <div id="hdr"><b>HW 21</b>　核心路由器管理域规划 · 第 3 集　K-means 把一个簇拆成两个</div>
+  <div id="chap"></div>
+  <div id="scene"></div>
+  <div id="cap"><span></span></div>
+  <div id="prog"><div id="progFill"></div></div>
+</div></div></div>
+<div id="bar">
+  <button id="play" aria-label="播放或暂停"></button>
+  <span id="time">00:00 / 00:00</span>
+  <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="播放进度">
+  <div id="chapters"></div>
+  <button id="speed" aria-label="播放速度">1×</button>
+</div>
+<script>
+(function(){
+const CAPTURE=/capture/.test(location.search);
+if(CAPTURE)document.body.classList.add('capture');
+
+/* ---------- 小工具 ---------- */
+const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eout=x=>1-Math.pow(1-x,3);
+const pr=(t,a,b)=>clamp((t-a)/(b-a));
+const ep=(t,a,b)=>ease(pr(t,a,b));
+const lerp=(a,b,p)=>a+(b-a)*p;
+const INK=[27,38,49],BLUE=[36,81,196],GRAY=[175,183,189];
+const mix=(a,b,p)=>`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*p)).join(',')})`;
+const NOPX={opacity:1,zIndex:1,fontWeight:1,lineHeight:1,flex:1};
+function H(tag,cls,css,parent,html){
+  const e=document.createElement(tag);if(cls)e.className=cls;
+  if(css)for(const k in css)e.style[k]=(typeof css[k]==='number'&&!NOPX[k])?css[k]+'px':css[k];
+  if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e;
+}
+const SVGNS='http://www.w3.org/2000/svg';
+function S(tag,attrs,parent,text){
+  const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);
+  if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;
+}
+function vis(e,a,dy=0,dx=0){e.style.opacity=a;e.style.transform=(dy||dx)?`translate(${(1-a)*dx}px,${(1-a)*dy}px)`:'';}
+function pop(e,a){e.style.opacity=a;e.style.transform=`scale(${.82+.18*a})`;}
+function drawable(el){
+  const len=el.getTotalLength();el.style.strokeDasharray=len+' '+(len+4);el.style.strokeDashoffset=len;
+  return {el,len,set(p){el.style.strokeDashoffset=len*(1-p);el.style.opacity=p>0?1:0;}};
+}
+// 手画的红笔圈：略微超过一圈、带一点倾斜
+function penCircle(g,cx,cy,a,b,color,w=3.2,rot=-9){
+  let d='',len=0,px=0,py=0;const n=72,turns=1.1,r=rot*Math.PI/180;
+  for(let k=0;k<=n;k++){
+    const th=-Math.PI*.62+k/n*turns*2*Math.PI,gr=1+.07*k/n;
+    const x=a*gr*Math.cos(th),y=b*gr*Math.sin(th);
+    const X=cx+x*Math.cos(r)-y*Math.sin(r),Y=cy+x*Math.sin(r)+y*Math.cos(r);
+    d+=(k?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);if(k)len+=Math.hypot(X-px,Y-py);px=X;py=Y;
+  }
+  const el=S('path',{d,fill:'none'},g);
+  Object.assign(el.style,{stroke:color,strokeWidth:w,strokeLinecap:'round',strokeLinejoin:'round',strokeDasharray:len+' '+(len+4),strokeDashoffset:len,opacity:0});
+  return {el,len,set(p){el.style.strokeDashoffset=len*(1-p);el.style.opacity=p>0?1:0;}};
+}
+// 方括号：一条括号 = 一段子数组
+function bracket(svg,x1,x2,y,color,label,dir=1,fs=20){
+  const g=S('g',{},svg);
+  const p=S('path',{d:`M${x1} ${y-8*dir} L${x1} ${y} L${x2} ${y} L${x2} ${y-8*dir}`,fill:'none'},g);
+  Object.assign(p.style,{stroke:color,strokeWidth:3.5,strokeLinecap:'round',strokeLinejoin:'round'});
+  const d=drawable(p);let tx=null;
+  if(label){tx=S('text',{x:x2+12,y:y+7,class:'halo'},g,label);tx.style.fill=color;tx.style.fontSize=fs+'px';tx.style.opacity=0;}
+  return {g,d,t:tx,set(pp,lp=pp){d.set(pp);if(tx)tx.style.opacity=lp;}};
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+const KW=/\b(int|for|while|if|return|auto|unordered_map|vector)\b/g;
+function codePanel(r,x,y,lines,fs,lh,title){
+  const box=H('div','code',{left:x,top:y,fontSize:fs,lineHeight:lh+'px'},r);
+  if(title)H('div','code-title',null,box,title);
+  const hl=H('div','code-hl',{height:lh},box);
+  const els=lines.map(l=>H('div','cl',null,box,l?esc(l).replace(KW,'<span class="kw">$1</span>'):' '));
+  let cur;
+  return {box,els,set(i){
+    if(i===cur)return;cur=i;
+    if(i==null){hl.style.opacity=0;}else{hl.style.opacity=.95;hl.style.top=els[i].offsetTop+'px';}
+  }};
+}
+
+/* =====================================================================
+   HW21 核心路由器管理域规划（Bi-K-means）：四集动画共用的部分
+   第一部分是算法模拟：和 ACM_test/HW/21.cpp 的逻辑逐句对应，另外把中间过程都记下来，
+   动画里的每个数字都来自这里，不是手填的。
+   第二部分是画图用的小工具。
+   ===================================================================== */
+
+/* ---------- 算法模拟（对应 21.cpp） ---------- */
+// 对应 getSSENumerator：返回 n × SSE（整数，用 BigInt 保证精确）
+function hwSseNum(pts){
+  const n=BigInt(pts.length);let sx=0n,sy=0n,sq=0n;
+  for(const p of pts){sx+=BigInt(p.x);sy+=BigInt(p.y);sq+=BigInt(p.x*p.x+p.y*p.y);}
+  return sq*n-sx*sx-sy*sy;
+}
+// 对应 splitCluster：对一个簇做 K = 2 的 K-means。iters 里记下每一轮循环的全部中间量
+function hwSplit(pts,br){
+  const res={valid:false,iters:[]},n=pts.length;
+  if(n<2){br.split_lt2++;return res;}
+  let mi=0,ma=0;
+  for(let i=1;i<n;i++){
+    if(pts[i].x<pts[mi].x)mi=i;
+    if(pts[i].x>pts[ma].x)ma=i;
+  }
+  res.minIndex=mi;res.maxIndex=ma;
+  let c0={x:pts[mi].x,y:pts[mi].y},c1={x:pts[ma].x,y:pts[ma].y};
+  let belong=new Array(n).fill(-1);
+  while(true){
+    const nb=new Array(n),d0s=[],d1s=[];
+    for(let i=0;i<n;i++){
+      const dx0=pts[i].x-c0.x,dy0=pts[i].y-c0.y,dx1=pts[i].x-c1.x,dy1=pts[i].y-c1.y;
+      const d0=dx0*dx0+dy0*dy0,d1=dx1*dx1+dy1*dy1;
+      d0s.push(d0);d1s.push(d1);
+      if(d0<=d1){nb[i]=0;br[d0===d1?'assign_tie':'assign_0']++;}else{nb[i]=1;br.assign_1++;}
+    }
+    let same=true;
+    for(let i=0;i<n;i++)if(belong[i]!==nb[i]){same=false;break;}
+    let sx0=0,sy0=0,sx1=0,sy1=0,cnt0=0,cnt1=0;
+    for(let i=0;i<n;i++){
+      if(nb[i]===0){sx0+=pts[i].x;sy0+=pts[i].y;cnt0++;}else{sx1+=pts[i].x;sy1+=pts[i].y;cnt1++;}
+    }
+    if(cnt0===0||cnt1===0){br.empty_cluster++;return res;}
+    const nc0={x:sx0/cnt0,y:sy0/cnt0},nc1={x:sx1/cnt1,y:sy1/cnt1};
+    const move0=Math.hypot(nc0.x-c0.x,nc0.y-c0.y),move1=Math.hypot(nc1.x-c1.x,nc1.y-c1.y),maxMove=Math.max(move0,move1);
+    const stop=same||maxMove<1e-6;
+    res.iters.push({c0,c1,d0s,d1s,nb,prev:belong,same,cnt0,cnt1,sx0,sy0,sx1,sy1,nc0,nc1,move0,move1,maxMove,stop});
+    belong=nb;c0=nc0;c1=nc1;
+    if(stop){br[same?'stop_same':'stop_move']++;break;}
+    br.loop_again++;
+  }
+  res.belong=belong;res.c0=c0;res.c1=c1;
+  res.child0=pts.filter((p,i)=>belong[i]===0);res.child1=pts.filter((p,i)=>belong[i]===1);
+  const pn=BigInt(n),n0=BigInt(res.child0.length),n1=BigInt(res.child1.length);
+  res.parentNum=hwSseNum(pts);res.child0Num=hwSseNum(res.child0);res.child1Num=hwSseNum(res.child1);
+  res.gradNum=res.parentNum*n0*n1-res.child0Num*pn*n1-res.child1Num*pn*n0;
+  res.gradDen=pn*n0*n1;
+  res.sseP=Number(res.parentNum)/n;res.sse0=Number(res.child0Num)/res.child0.length;res.sse1=Number(res.child1Num)/res.child1.length;
+  res.grad=Number(res.gradNum)/Number(res.gradDen);
+  res.valid=true;
+  return res;
+}
+// 对应 compareGrad：交叉相乘比较两个分数
+function hwCmp(a,b){const l=a.gradNum*b.gradDen,r=b.gradNum*a.gradDen;return l>r?1:l<r?-1:0;}
+const hwSizes=cl=>cl.map(c=>c.pts.length).sort((a,b)=>b-a);
+// 对应 main：返回每一轮的簇列表、每个候选的试拆结果、比较动作和输出
+function hwRun(N,points){
+  const br={split_lt2:0,assign_0:0,assign_tie:0,assign_1:0,empty_cluster:0,stop_same:0,stop_move:0,loop_again:0,
+    skip_single:0,invalid:0,first:0,bigger:0,smaller:0,tie_size:0,tie_birth:0,tie_keep:0,no_candidate:0,split_done:0,loop_not_entered:0};
+  const pts=points.map((p,i)=>({x:p[0],y:p[1],id:i}));
+  let clusters=[{pts,birth:0}],birthCounter=1;
+  const out=[hwSizes(clusters)],rounds=[];
+  if(!(clusters.length<N))br.loop_not_entered++;
+  while(clusters.length<N){
+    let best=-1,bestSplit=null;const cands=[];
+    for(let i=0;i<clusters.length;i++){
+      if(clusters[i].pts.length<2){br.skip_single++;cands.push({i,act:'skip_single'});continue;}
+      const cs=hwSplit(clusters[i].pts,br);
+      if(!cs.valid){br.invalid++;cands.push({i,act:'invalid'});continue;}
+      if(best===-1){best=i;bestSplit=cs;br.first++;cands.push({i,split:cs,act:'first'});continue;}
+      const cmp=hwCmp(cs,bestSplit),vs=best;let act;
+      if(cmp>0){best=i;bestSplit=cs;act='bigger';}
+      else if(cmp===0){
+        const curSize=clusters[i].pts.length,bestSize=clusters[best].pts.length;
+        if(curSize>bestSize){best=i;bestSplit=cs;act='tie_size';}
+        else if(curSize===bestSize&&clusters[i].birth<clusters[best].birth){best=i;bestSplit=cs;act='tie_birth';}
+        else act='tie_keep';
+      }else act='smaller';
+      br[act]++;cands.push({i,split:cs,act,cmp,vs});
+    }
+    const before=clusters.slice();
+    if(best===-1){br.no_candidate++;rounds.push({before,cands,best:-1});break;}
+    clusters=clusters.filter((c,i)=>i!==best);
+    clusters.push({pts:bestSplit.child0,birth:birthCounter++});
+    clusters.push({pts:bestSplit.child1,birth:birthCounter++});
+    br.split_done++;
+    out.push(hwSizes(clusters));
+    rounds.push({before,cands,best,split:bestSplit,after:clusters.slice(),sizes:hwSizes(clusters)});
+  }
+  return {N,pts,rounds,out,br,final:clusters};
+}
+
+/* ---------- 画图工具 ---------- */
+// 簇的颜色：下标 = birth % 8。K-means 里 0 号子簇用蓝色（1），1 号子簇用红色（2）
+const HWC=['#59636E','#2451C4','#CF3528','#1E8E5A','#B07A00','#7A3FB8','#0E7C86','#C2408C'];
+const HWINK='#1B2631',HWDIM='#AFB7BD';
+const HWN='ABCDEFGHIJKLMNOP';
+const hwF=v=>String(Math.round(v*100)/100);          // 数字显示：最多两位小数
+const hwP=p=>`(${hwF(p.x)}, ${hwF(p.y)})`;
+function hwTxt(r,x,y,html,fs,css){return H('div','a',Object.assign({left:x,top:y,fontSize:fs||30},css||{}),r,html);}
+function hwHand(r,x,y,html,fs,css){return H('div','a hand',Object.assign({left:x,top:y,fontSize:fs||36},css||{}),r,html);}
+function hwMono(r,x,y,html,fs,css){return H('div','a',Object.assign({left:x,top:y,fontSize:fs||30,fontFamily:'var(--mono)'},css||{}),r,html);}
+// 依次出现：第 k 个元素在 t0 + gap·k 开始淡入
+function hwSeq(list,t,t0,gap,dy){list.forEach((e,k)=>vis(e,ep(t,t0+gap*k,t0+gap*k+.6),dy==null?8:dy));}
+// 在 [a, b] 之间为 1，两端各用 .4 秒淡入淡出
+const hwWin=(t,a,b)=>Math.min(ep(t,a,a+.4),1-ep(t,b-.4,b));
+
+// 坐标平面。o：{x, y 左上角；u 一格多少像素；xmax、ymax 坐标范围；tick 每隔几格标一个数}
+function hwPlane(r,o){
+  const W=o.u*o.xmax,HH=o.u*o.ymax,pad=30;
+  H('div','a',{left:o.x-pad-18,top:o.y-pad,width:W+2*pad+18,height:HH+2*pad+14,background:'rgba(255,255,255,.8)',border:'1.5px solid rgba(27,38,49,.16)',borderRadius:'10px'},r);
+  const svg=S('svg',{class:'ov'},r),X=v=>o.x+v*o.u,Y=v=>o.y+HH-v*o.u,g0=S('g',{},svg),tk=o.tick||1;
+  for(let i=0;i<=o.xmax;i++){const l=S('line',{x1:X(i),y1:Y(0),x2:X(i),y2:Y(o.ymax)},g0);l.style.stroke=i?'#DDE3E6':'#66707A';l.style.strokeWidth=i?1.5:2.5;
+    if(i%tk===0){const tx=S('text',{x:X(i),y:Y(0)+25,'text-anchor':'middle'},g0,String(i));tx.style.fill='#66707A';tx.style.fontSize='18px';}}
+  for(let j=0;j<=o.ymax;j++){const l=S('line',{x1:X(0),y1:Y(j),x2:X(o.xmax),y2:Y(j)},g0);l.style.stroke=j?'#DDE3E6':'#66707A';l.style.strokeWidth=j?1.5:2.5;
+    if(j&&j%tk===0){const tx=S('text',{x:X(0)-12,y:Y(j)+6,'text-anchor':'end'},g0,String(j));tx.style.fill='#66707A';tx.style.fontSize='18px';}}
+  const ax=S('text',{x:X(o.xmax)+14,y:Y(0)+7},g0,'x');ax.style.fill='#66707A';ax.style.fontSize='20px';
+  const ay=S('text',{x:X(0),y:Y(o.ymax)-10,'text-anchor':'middle'},g0,'y');ay.style.fill='#66707A';ay.style.fontSize='20px';
+  return {o,svg,X,Y,W,HH,gUnder:S('g',{},svg),gLink:S('g',{},svg),gPt:S('g',{},svg),gCen:S('g',{},svg),gTop:S('g',{},svg)};
+}
+// 一个点：圆点 + 名字。opt：{dx, dy 名字相对圆心的位置；coord 是否带坐标；r 半径；fs 字号}
+function hwPt(pl,p,name,opt){
+  opt=opt||{};const g=S('g',{},pl.gPt),cx=pl.X(p.x),cy=pl.Y(p.y);
+  const c=S('circle',{cx,cy,r:opt.r||13},g);c.style.stroke='#F4F5F0';c.style.strokeWidth=3;
+  const tx=S('text',{x:cx+(opt.dx==null?20:opt.dx),y:cy+(opt.dy==null?-19:opt.dy),class:'halo'},g,name+(opt.coord?` (${p.x}, ${p.y})`:''));
+  tx.style.fontSize=(opt.fs||22)+'px';tx.style.fontFamily='var(--body)';tx.style.fontWeight=700;
+  if(opt.anchor)tx.setAttribute('text-anchor',opt.anchor);
+  const e={g,c,tx,p,cx,cy,set(col,al,k){c.style.fill=col;tx.style.fill=col;g.style.opacity=al==null?1:al;c.style.transform=(k==null||k===1)?'':`scale(${k})`;}};
+  e.set(HWINK);return e;
+}
+// 质心标记：一个圈加十字，可以移动
+function hwCen(pl,col,name){
+  const g=S('g',{},pl.gCen);
+  const bg=S('circle',{cx:0,cy:0,r:21,fill:'none'},g);bg.style.stroke='#F4F5F0';bg.style.strokeWidth=10;
+  const ring=S('circle',{cx:0,cy:0,r:21,fill:'none'},g);ring.style.stroke=col;ring.style.strokeWidth=5;
+  const cr=S('path',{d:'M-9 0H9M0 -9V9',fill:'none'},g);cr.style.stroke=col;cr.style.strokeWidth=4;cr.style.strokeLinecap='round';
+  const tx=S('text',{x:24,y:34,class:'halo'},g,name);tx.style.fill=col;tx.style.fontSize='22px';tx.style.fontWeight=700;tx.style.fontFamily='var(--body)';
+  g.style.opacity=0;
+  return {g,tx,ring,cr,set(x,y,al,sc){g.setAttribute('transform',`translate(${pl.X(x)} ${pl.Y(y)})`+(sc?` scale(${sc})`:''));g.style.opacity=al==null?1:al;},
+    label(s,dx,dy,anchor){tx.textContent=s;if(dx!=null){tx.setAttribute('x',dx);tx.setAttribute('y',dy);}if(anchor)tx.setAttribute('text-anchor',anchor);},color(c2){ring.style.stroke=c2;cr.style.stroke=c2;tx.style.fill=c2;}};
+}
+function hwLine(parent,w,dash){const l=S('line',{x1:0,y1:0,x2:0,y2:0},parent);l.style.strokeWidth=w||3;l.style.strokeLinecap='round';if(dash)l.style.strokeDasharray=dash;l.style.opacity=0;
+  return {l,set(x1,y1,x2,y2,col,al){l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);if(col)l.style.stroke=col;l.style.opacity=al==null?1:al;}};}
+// 两个质心的中垂线落在坐标框里的那一段（数据坐标）；框外返回 null
+function hwBisSeg(o,c0,c1){
+  const mx=(c0.x+c1.x)/2,my=(c0.y+c1.y)/2,dx=-(c1.y-c0.y),dy=c1.x-c0.x;let a0=-1e9,a1=1e9,ok=true;
+  const clip=(p,d,lo,hi)=>{if(Math.abs(d)<1e-12){if(p<lo||p>hi)ok=false;return;}let a=(lo-p)/d,b=(hi-p)/d;if(a>b){const s=a;a=b;b=s;}a0=Math.max(a0,a);a1=Math.min(a1,b);};
+  clip(mx,dx,-.25,o.xmax+.25);clip(my,dy,-.25,o.ymax+.25);
+  if(!ok||a0>=a1)return null;
+  return [mx+dx*a0,my+dy*a0,mx+dx*a1,my+dy*a1];
+}
+
+/* K-means 演示器：一个平面 + 点 + 两个质心 + 归属连线 + 中垂线。
+   view(k, a, u)：第 k 轮循环（从 0 数），已经给前 a 个点分好了簇（a 可以带小数，表示正在连线），
+   质心更新进度 u（0 = 还在这一轮分配时的位置，1 = 已经移到新的平均位置）。 */
+function hwKm(r,pts,sp,o){
+  const pl=hwPlane(r,o),lab=o.lab||{};
+  const bis=hwLine(pl.gUnder,3,'10 9'),links=pts.map(()=>hwLine(pl.gLink,3.5));
+  const P=pts.map((p,i)=>hwPt(pl,p,HWN[p.id],Object.assign({coord:o.coord},lab[i]||{})));
+  const C=[hwCen(pl,HWC[1],'c0'),hwCen(pl,HWC[2],'c1')];
+  const hot=S('circle',{cx:0,cy:0,r:26,fill:'none'},pl.gTop);hot.style.stroke='#FFB800';hot.style.strokeWidth=6;hot.style.opacity=0;
+  const km={pl,P,C,links,bis,pts,sp,
+    focus(i,al){if(i==null||i<0||i>=pts.length){hot.style.opacity=0;return;}hot.setAttribute('cx',P[i].cx);hot.setAttribute('cy',P[i].cy);hot.style.opacity=al==null?1:al;},
+    view(k,a,u,v){
+      v=v||{};const it=sp.iters[k],cc=[{x:lerp(it.c0.x,it.nc0.x,u),y:lerp(it.c0.y,it.nc0.y,u)},{x:lerp(it.c1.x,it.nc1.x,u),y:lerp(it.c1.y,it.nc1.y,u)}];
+      const cenA=v.cen==null?1:v.cen;
+      C[0].set(cc[0].x,cc[0].y,cenA);C[1].set(cc[1].x,cc[1].y,cenA);
+      pts.forEach((p,i)=>{
+        const f=clamp(a-i),old=it.prev[i];                    // f：这个点在这一轮的连线进度
+        if(f>0){const c=cc[it.nb[i]];P[i].set(HWC[it.nb[i]+1]);links[i].set(P[i].cx,P[i].cy,lerp(P[i].cx,pl.X(c.x),f),lerp(P[i].cy,pl.Y(c.y),f),HWC[it.nb[i]+1],.9);}
+        else if(old>=0){const c=cc[old];P[i].set(HWC[old+1]);links[i].set(P[i].cx,P[i].cy,pl.X(c.x),pl.Y(c.y),HWC[old+1],v.oldLink==null?.28:v.oldLink);}
+        else{P[i].set(HWINK);links[i].set(0,0,0,0,null,0);}
+      });
+      const sg=hwBisSeg(o,cc[0],cc[1]),ba=v.bis==null?0:v.bis;
+      if(sg&&ba>0)bis.set(pl.X(sg[0]),pl.Y(sg[1]),pl.X(sg[2]),pl.Y(sg[3]),'#66707A',ba);else bis.set(0,0,0,0,null,0);
+    }};
+  return km;
+}
+// 分配表：每个点到两个质心的距离平方和归属。show(a)：显示前 a 行
+function hwKmTab(r,x,y,pts,it,o){
+  o=o||{};const rh=o.rh||50,fs=o.fs||26,cw=o.cw||[110,170,170,190],xs=[0];cw.forEach(w=>xs.push(xs[xs.length-1]+w));
+  const hd=['点','到 c0 距离²','到 c1 距离²','归属'].map((s,k)=>H('div','a',{left:x+xs[k],top:y,width:cw[k],textAlign:'center',fontSize:22,color:'var(--graphite)'},r,s));
+  H('div','a',{left:x,top:y+36,width:xs[4],height:2,background:'rgba(27,38,49,.25)'},r);
+  const rows=pts.map((p,i)=>{
+    const g=H('div','a',{left:x,top:y+44+rh*i,width:xs[4],height:rh,opacity:0},r),b=it.nb[i],tie=it.d0s[i]===it.d1s[i],chg=it.prev[i]>=0&&it.prev[i]!==b;
+    if(chg||tie)H('div','mk',{left:-8,top:5,width:xs[4]+16,height:rh-10},g);
+    H('div','a',{left:xs[0],top:6,width:cw[0],textAlign:'center',fontSize:fs,fontWeight:700,lineHeight:'38px'},g,HWN[p.id]);
+    H('div','a',{left:xs[1],top:6,width:cw[1],textAlign:'center',fontSize:fs,fontFamily:'var(--num)',lineHeight:'38px',fontWeight:b===0?700:400,color:b===0?HWC[1]:'var(--graphite)'},g,hwF(it.d0s[i]));
+    H('div','a',{left:xs[2],top:6,width:cw[2],textAlign:'center',fontSize:fs,fontFamily:'var(--num)',lineHeight:'38px',fontWeight:b===1?700:400,color:b===1?HWC[2]:'var(--graphite)'},g,hwF(it.d1s[i]));
+    H('div','a',{left:xs[3],top:6,width:cw[3],textAlign:'center',fontSize:fs,fontWeight:700,lineHeight:'38px',color:HWC[b+1]},g,b+' 号'+(tie?'（平局）':chg?'（变了）':''));
+    return g;});
+  return {rows,hd,w:xs[4],h:44+rh*pts.length,show(a){rows.forEach((g,i)=>vis(g,clamp(a-i),6));}};
+}
+// 簇列表：一排小卡片，每张是一个簇（成员 + birth）。clusters：[{pts, birth}]
+function hwChips(r,x,y,clusters,o){
+  o=o||{};const box=H('div','a',{left:x,top:y,display:'flex',gap:(o.gap||14)+'px',alignItems:'flex-start'},r);
+  const els=clusters.map((c,i)=>{
+    const col=HWC[c.birth%8],e=H('div','',{border:'3px solid '+col,borderRadius:'10px',padding:'6px 14px 4px',background:'rgba(255,255,255,.85)',textAlign:'center',position:'relative'},box);
+    H('div','',{fontSize:o.fs||28,fontWeight:700,color:col,letterSpacing:'.08em',lineHeight:1.3},e,c.pts.map(p=>HWN[p.id]).join(''));
+    H('div','',{fontSize:o.fs2||17,color:'var(--graphite)',fontFamily:'var(--mono)',lineHeight:1.4},e,(o.idx?`[${i}] `:'')+'birth '+c.birth);
+    return e;});
+  return {box,els};
+}
+// 代码面板：可以高亮连续的几行。set(a, b)：高亮第 a 到 b 行（从 0 数）；set(null) 取消
+const HWKW=/\b(int|long|double|bool|void|const|struct|for|while|if|else|return|break|continue|true|false|vector|__int128|auto)\b/g;
+function hwCode(r,x,y,lines,fs,lh,title,w){
+  const box=H('div','code',{left:x,top:y,fontSize:fs,lineHeight:lh+'px'},r);if(w)box.style.width=w+'px';
+  if(title)H('div','code-title',null,box,title);
+  const hl=H('div','code-hl',{height:lh},box);
+  const els=lines.map(l=>{
+    if(!l)return H('div','cl',null,box,' ');
+    const k=l.indexOf('//'),code=k<0?l:l.slice(0,k),cm=k<0?'':l.slice(k);
+    return H('div','cl',null,box,esc(code).replace(HWKW,'<span class="kw">$1</span>')+(cm?`<span style="color:#7C8791">${esc(cm)}</span>`:''));});
+  let key;
+  return {box,els,set(a,b){
+    const kk=a==null?'x':a+'-'+b;if(kk===key)return;key=kk;
+    if(a==null){hl.style.opacity=0;return;}
+    if(b==null)b=a;hl.style.opacity=.95;hl.style.top=els[a].offsetTop+'px';hl.style.height=(els[b].offsetTop-els[a].offsetTop+lh)+'px';
+  }};
+}
+// 可以滚动的代码面板：只显示 rows 行，scroll(top) 让第 top 行（可以带小数）在最上面；set(a, b) 高亮第 a 到 b 行
+function hwScroll(r,x,y,lines,fs,lh,rows,title,w){
+  const box=H('div','code',{left:x,top:y,fontSize:fs,lineHeight:lh+'px',width:w},r);
+  if(title)H('div','code-title',null,box,title);
+  const vp=H('div','',{position:'relative',height:rows*lh,overflow:'hidden'},box),inner=H('div','',{position:'absolute',left:0,top:0,right:0},vp);
+  const hl=H('div','code-hl',{height:lh,left:-10,right:-10},inner);
+  const els=lines.map(l=>{
+    if(!l)return H('div','cl',null,inner,' ');
+    const k=l.indexOf('//'),code=k<0?l:l.slice(0,k),cm=k<0?'':l.slice(k);
+    return H('div','cl',null,inner,esc(code).replace(HWKW,'<span class="kw">$1</span>')+(cm?`<span style="color:#7C8791">${esc(cm)}</span>`:''));});
+  const maxTop=Math.max(0,lines.length-rows);let key;
+  return {box,els,rows,
+    set(a,b){const kk=a==null?'x':a+'-'+b;if(kk===key)return;key=kk;
+      if(a==null){hl.style.opacity=0;return;}
+      if(b==null)b=a;hl.style.opacity=.95;hl.style.top=a*lh+'px';hl.style.height=(b-a+1)*lh+'px';},
+    scroll(top){inner.style.transform=`translateY(${-clamp(top,0,maxTop)*lh}px)`;}};
+}
+// 箭头（SVG）
+function hwArrow(svg,x1,y1,x2,y2,color,w){
+  const g=S('g',{},svg),ln=S('line',{x1,y1,x2,y2},g);Object.assign(ln.style,{stroke:color,strokeWidth:w||5,strokeLinecap:'round'});
+  const a=Math.atan2(y2-y1,x2-x1),L=20,W=10,bx=x2-L*Math.cos(a),by=y2-L*Math.sin(a);
+  const h=S('path',{d:`M${x2+6*Math.cos(a)} ${y2+6*Math.sin(a)} L${bx-W*Math.sin(a)} ${by+W*Math.cos(a)} L${bx+W*Math.sin(a)} ${by-W*Math.cos(a)} Z`},g);h.style.fill=color;
+  g.style.opacity=0;return g;
+}
+// 用例数据（和 ACM_test/HW/21_cases/ 里的文件相同）
+const HWD={
+  s1:{N:2,pts:[[1,1],[2,2],[6,6]]},
+  two:{N:2,pts:[[2,3],[5,5]]},
+  tie:{N:2,pts:[[0,2],[4,0],[8,2]]},
+  k6:{N:6,pts:[[0,6],[2,0],[4,0],[9,1],[10,5],[11,0]]},
+  seed:{N:2,pts:[[6,0],[7,0],[8,6],[9,6],[10,6],[11,0]]},
+  small:{N:3,pts:[[0,0],[1,0],[2,0],[3,0],[10,0],[16,0]]},
+  tieBig:{N:3,pts:[[0,0],[2,2],[10,0],[11,0],[12,0],[13,0]]},
+  tieSame:{N:3,pts:[[0,0],[1,0],[10,0],[11,0]]},
+  nGtL:{N:5,pts:[[1,1],[2,2],[6,6]]}};
+const hwRunOf=k=>hwRun(HWD[k].N,HWD[k].pts);
+
+/* ================= 场景 ================= */
+const SC=[];
+
+/* ===== 第 3 集：K-means 把一个簇拆成两个 ===== */
+const E2R=hwRunOf('k6'),E2P=E2R.pts,E2SP=E2R.rounds[0].split;      // 6 个点第一次拆分的全过程（3 轮）
+const E2PL={x:150,y:214,u:66,xmax:12,ymax:7,lab:{3:{dx:20,dy:30}}};
+const e2Km=(r,pts,sp,pl)=>{const km=hwKm(r,pts||E2P,sp||E2SP,pl||E2PL);km.C[1].label('c1',-28,-22,'end');return km;};
+const e2Head=(r,s)=>hwTxt(r,1020,132,s,40,{fontFamily:'var(--display)',fontWeight:900});
+// 一个点到两个质心的距离平方算式（两行）
+function e2Formula(r,x,y,p,it){
+  const g=H('div','a',{left:x,top:y,opacity:0},r);
+  const one=(k,c,d,yy)=>H('div','a',{left:0,top:yy,fontSize:27},g,
+    `<b>${HWN[p.id]}</b> 到 <b style="color:${HWC[k+1]}">c${k} ${hwP(c)}</b>：(${p.x} − ${hwF(c.x)})² + (${p.y} − ${hwF(c.y)})² = <b style="color:${HWC[k+1]}">${hwF(d)}</b>`);
+  one(0,it.c0,it.d0s[p.id],0);one(1,it.c1,it.d1s[p.id],44);
+  return g;
+}
+
+/* 1 这一集做什么 */
+SC.push({title:'这一集做什么',dur:17,caps:[
+  [.4,6.4,'上一集说到“试拆”：把一个簇分成两半。这件事由 K-means 来做。这里 K 等于 2，意思是分成 2 个簇。'],
+  [6.6,16.6,'做法是：先选两个质心，然后两步轮流做。第一步，每个点归到离它更近的质心；第二步，每个质心移到自己那一组点的平均位置。一直做到不再变化。']],
+build(r){
+  const c={};c.pl=hwPlane(r,E2PL);c.P=E2P.map((p,i)=>hwPt(c.pl,p,HWN[i],{coord:true,fs:19,dy:-17,dx:i===5?-14:i===4?-14:14,anchor:i>=4?'end':null}));
+  hwTxt(r,150,730,'这一集的例子：6 个点 A – F（用例 05）',26,{color:'var(--graphite)'});
+  c.h=e2Head(r,'K-means（K = 2）');
+  c.h2=hwTxt(r,1020,196,'把一个簇分成 <b style="color:var(--blue)">0 号</b>、<b style="color:var(--red)">1 号</b> 两个子簇',32);
+  const st=[['准备','选两个初始质心 c0、c1'],['① 分配','每个点归到离它更近的质心'],['② 更新','每个质心移到自己那组点的平均位置'],['重复','①② 轮流做，直到不再变化']];
+  c.st=st.map(([a,b],k)=>{const g=H('div','a',{left:1020,top:290+92*k,width:800,height:92,borderTop:'1.5px solid rgba(27,38,49,.14)'},r);
+    H('div','a',{left:8,top:26,fontSize:32,fontWeight:700,color:'var(--blue)'},g,a);H('div','a',{left:170,top:28,fontSize:30},g,b);return g;});
+  c.n=hwHand(r,1020,690,'对应代码里的函数 splitCluster',36);
+  return c;
+},
+update(c,t){
+  c.P.forEach((e,i)=>e.set(HWINK,ep(t,.4+.12*i,1+.12*i)));
+  vis(c.h,ep(t,.6,1.2),10);vis(c.h2,ep(t,2.6,3.2),8);
+  const a=[6.8,8.6,11.4,14];c.st.forEach((g,k)=>vis(g,ep(t,a[k],a[k]+.6),8));vis(c.n,ep(t,15,15.6),8);
+}});
+
+/* 2 初始质心 */
+SC.push({title:'初始质心',dur:21,caps:[
+  [.4,7,'初始质心怎么选，题目有规定：必须是这个簇里 x 坐标最小的点，和 x 坐标最大的点。只看 x，不看 y。'],
+  [7.2,13.6,'这 6 个点里，x 最小的是 A，x 最大的是 F。所以 0 号质心 c0 放在 A 上，1 号质心 c1 放在 F 上。'],
+  [13.8,20.6,'题目保证各点的 x 互不相同，所以这两个点是唯一的。不许随机选，这样每次运行的结果都一样。']],
+build(r){
+  const c={};c.km=e2Km(r);
+  e2Head(r,'初始质心（提示 3）');
+  c.a=hwTxt(r,1020,204,'必须是簇里 <b style="color:var(--red)">x 最小</b> 和 <b style="color:var(--red)">x 最大</b> 的两个点',32);
+  hwTxt(r,1020,290,'各点的 x 坐标',24,{color:'var(--graphite)'});
+  c.xs=E2P.map((p,i)=>{const g=H('div','a',{left:1020+124*i,top:330,width:108,height:104,border:'2.5px solid var(--ink)',borderRadius:'8px',background:'rgba(255,255,255,.8)',textAlign:'center'},r);
+    H('div','',{fontSize:24,fontWeight:700,marginTop:8},g,HWN[i]);H('div','',{fontSize:44,fontFamily:'var(--num)',lineHeight:1.15},g,String(p.x));return g;});
+  c.t0=hwTxt(r,1020,446,'最小',26,{color:HWC[1],fontWeight:700,width:108,textAlign:'center'});
+  c.t1=hwTxt(r,1020+124*5,446,'最大',26,{color:HWC[2],fontWeight:700,width:108,textAlign:'center'});
+  c.l0=hwTxt(r,1020,520,`<b style="color:${HWC[1]}">c0</b> = A 的位置 (0, 6)　　0 号质心`,34);
+  c.l1=hwTxt(r,1020,584,`<b style="color:${HWC[2]}">c1</b> = F 的位置 (11, 0)　　1 号质心`,34);
+  c.n=hwHand(r,1020,680,'x 互不相同 → 这两个点唯一',38);
+  c.n2=hwTxt(r,1020,750,'代码里：<span style="font-family:var(--mono)">minIndex</span>、<span style="font-family:var(--mono)">maxIndex</span> 记这两个点的下标',26,{color:'var(--graphite)'});
+  return c;
+},
+update(c,t){
+  const on=ep(t,7.4,8.2);
+  c.km.view(0,0,0,{cen:on});
+  vis(c.a,ep(t,.8,1.4),8);
+  c.xs.forEach((g,i)=>{vis(g,ep(t,2.4+.2*i,3+.2*i),8);const hot=(i===0||i===5)&&t>=7.4;g.style.borderColor=hot?HWC[i?2:1]:'var(--ink)';g.style.background=hot?(i?'rgba(250,225,222,.95)':'rgba(221,227,243,.95)'):'rgba(255,255,255,.8)';});
+  c.t0.style.opacity=on;c.t1.style.opacity=on;vis(c.l0,ep(t,8.6,9.2),8);vis(c.l1,ep(t,10.4,11),8);
+  vis(c.n,ep(t,14,14.6),8);vis(c.n2,ep(t,17,17.6),8);
+}});
+
+/* 3、5、6：一轮分配（共用版面）。o：{title, head, k 第几轮（从 0 数）, dur, caps, T0 开始时间, per 每个点几秒, upd:[开始, 结束] 更新质心的时间, bis 中垂线出现时间, notes:[[时间, 文字, 是否手写]]} */
+function e2Round(o){
+  const it=E2SP.iters[o.k],n=E2P.length;
+  SC.push({title:o.title,dur:o.dur,caps:o.caps,
+  build(r){
+    const c={};c.km=e2Km(r);e2Head(r,o.head);
+    c.cl=hwTxt(r,150,730,`这一轮分配用的质心：<b style="color:${HWC[1]}">c0 ${hwP(it.c0)}</b>　<b style="color:${HWC[2]}">c1 ${hwP(it.c1)}</b>`,26);
+    c.f=E2P.map(p=>e2Formula(r,1020,200,p,it));
+    c.tab=hwKmTab(r,1020,306,E2P,it);
+    c.nt=o.notes.map(([tt,s,hand],q)=>(hand?hwHand:hwTxt)(r,1020,668+56*q,s,hand?34:27,hand?null:{color:'var(--ink)'}));
+    return c;
+  },
+  update(c,t){
+    const q=clamp(Math.floor((t-o.T0)/o.per),-1,n),u=(t-o.T0-o.per*q)/o.per;          // q：正在处理第几个点；u：它的进度 0~1
+    const a=q<0?0:q>=n?n:q+ep(u,.42,.82),up=o.upd?ep(t,o.upd[0],o.upd[1]):0;
+    c.km.view(o.k,a,up,{bis:o.bis==null?0:ep(t,o.bis,o.bis+.8)*.85});
+    c.km.focus(q>=0&&q<n?q:null,q>=0&&q<n?Math.min(ep(u,0,.12),1-ep(u,.86,1)):0);
+    c.f.forEach((g,i)=>vis(g,i===q?Math.min(ep(u,.04,.18),1-ep(u,.9,1)):0,0));
+    c.tab.show(q<0?0:q>=n?n:q+ep(u,.5,.7));
+    c.nt.forEach((e,k)=>vis(e,ep(t,o.notes[k][0],o.notes[k][0]+.6),8));
+  }});
+}
+e2Round({title:'第 1 轮：分配',head:'第 1 轮 · ① 分配',k:0,dur:41,T0:3,per:4.2,bis:28.6,caps:[
+  [.4,6.9,'第 1 轮，先做分配。对每个点，算它到 c0 和 c1 的距离平方，哪个小就归哪个。A 就是 c0 自己，距离是 0，归 0 号。'],
+  [7.1,11.2,'B 到 c0 是 40，到 c1 是 81，离 c0 近，也归 0 号。'],
+  [11.4,19.6,'C 要注意：到 c0 是 52，到 c1 是 49。c1 稍微近一点，所以这一轮 C 归 1 号。'],
+  [19.8,28.2,'D、E、F 都离 c1 更近，归 1 号。这一轮分完：0 号簇是 A、B，1 号簇是 C、D、E、F。'],
+  [28.4,40.6,'画出两个质心连线的中垂线：线的左边离 c0 近，右边离 c1 近。C 在线的右边一点点，所以被分到了 1 号。']],
+  notes:[[28.2,'0 号簇：A B　　　1 号簇：C D E F',false],[30,'虚线是 c0、c1 连线的中垂线：在哪一边，就归哪个质心',false],[33,'C 离这条线很近，下一轮它会换边',true]]});
+
+/* 4 第 1 轮：更新质心 */
+SC.push({title:'第 1 轮：更新质心',dur:27,caps:[
+  [.4,8.6,'分完之后做第二步：更新质心。每个质心移到自己那一组点的平均位置。0 号簇是 A、B，平均位置是 (1, 3)。'],
+  [8.8,16,'1 号簇是 C、D、E、F，四个点的 x 平均是 8.5，y 平均是 1.5。两个质心都移动了。'],
+  [16.2,26.6,'要不要停？看两个条件。质心移动了 3 左右，远远大于 1e-6；归属和上一轮也不一样，因为这是第一次分。两个条件都不满足，再来一轮。']],
+build(r){
+  const c={};c.km=e2Km(r);e2Head(r,'第 1 轮 · ② 更新质心');const it=E2SP.iters[0];
+  c.a=[hwTxt(r,1020,206,`<b style="color:${HWC[1]}">0 号簇 {A, B}</b>`,32),
+       hwMono(r,1020,256,'c0 = ( (0+2)/2 , (6+0)/2 ) = <b>(1, 3)</b>',30)];
+  c.b=[hwTxt(r,1020,340,`<b style="color:${HWC[2]}">1 号簇 {C, D, E, F}</b>`,32),
+       hwMono(r,1020,390,'c1 = ( (4+9+10+11)/4 , (0+1+5+0)/4 )',30),hwMono(r,1020,436,'   = <b>(8.5, 1.5)</b>',30)];
+  H('div','a',{left:1020,top:510,width:800,height:2,background:'rgba(27,38,49,.25)'},r);
+  c.q=hwTxt(r,1020,528,'要不要停？',26,{color:'var(--graphite)'});
+  c.m=[hwTxt(r,1020,574,`质心移动：c0 移了 ${hwF(it.move0)}，c1 移了 ${hwF(it.move1)}　→　最大 <b>${hwF(it.maxMove)}</b>`,27),
+       hwTxt(r,1020,626,'归属：上一轮还没分过（记作全是 −1）　→　<b>变了</b>',27),
+       hwHand(r,1020,694,'两个条件都不满足 → 再来一轮',38)];
+  return c;
+},
+update(c,t){
+  const u0=ep(t,5.4,7.4),u1=ep(t,12,14);
+  // 两个质心先后移动：分别插值
+  const it=E2SP.iters[0];c.km.view(0,6,0);
+  c.km.C[0].set(lerp(it.c0.x,it.nc0.x,u0),lerp(it.c0.y,it.nc0.y,u0));c.km.C[1].set(lerp(it.c1.x,it.nc1.x,u1),lerp(it.c1.y,it.nc1.y,u1));
+  E2P.forEach((p,i)=>{const b=it.nb[i],cx=b?lerp(it.c1.x,it.nc1.x,u1):lerp(it.c0.x,it.nc0.x,u0),cy=b?lerp(it.c1.y,it.nc1.y,u1):lerp(it.c0.y,it.nc0.y,u0),P=c.km.P[i];
+    c.km.links[i].set(P.cx,P.cy,c.km.pl.X(cx),c.km.pl.Y(cy),HWC[b+1],.9);});
+  hwSeq(c.a,t,1.6,1.6);vis(c.b[0],ep(t,9,9.6),8);vis(c.b[1],ep(t,10.2,10.8),8);vis(c.b[2],ep(t,11.6,12.2),8);
+  vis(c.q,ep(t,16.4,17),6);vis(c.m[0],ep(t,17.4,18),8);vis(c.m[1],ep(t,20.4,21),8);vis(c.m[2],ep(t,23.4,24),8);
+}});
+
+e2Round({title:'第 2 轮',head:'第 2 轮 · 分配，再更新',k:1,dur:37,T0:2.6,per:2.7,upd:[21,23.4],caps:[
+  [.4,7.9,'第 2 轮，用新的质心重新分配。A、B 还是离 c0 近，不变。'],
+  [8.1,18.6,'轮到 C：到 c0 是 18，到 c1 是 22.5。质心移动之后，C 变成离 c0 更近了，改归 0 号。D、E、F 不变。'],
+  [18.8,27,'再更新质心：0 号簇现在是 A、B、C，质心移到 (2, 2)；1 号簇是 D、E、F，质心移到 (10, 2)。'],
+  [27.2,36.6,'这一轮 C 的归属变了，质心也分别移动了 1.41 和 1.58。两个停止条件还是都不满足，继续。']],
+  notes:[[19,'更新：c0 → (2, 2)　　c1 → (10, 2)',false],[27.4,'归属：C 变了　　最大移动量 1.58，不小于 1e-6',false],[30,'两个条件都不满足 → 再来一轮',true]]});
+
+e2Round({title:'第 3 轮：停',head:'第 3 轮 · 归属没变，停',k:2,dur:27,T0:2,per:1.5,upd:[12,13],caps:[
+  [.4,11,'第 3 轮，再分配一次。这次每个点的归属都和上一轮一样，没有一个变化。'],
+  [11.2,18,'归属没变，重新算出来的质心也就和原来一样，移动量是 0。两个停止条件都满足了，K-means 结束。'],
+  [18.2,26.6,'结果：0 号子簇是 A、B、C，1 号子簇是 D、E、F。代码里它们叫 child0 和 child1。']],
+  notes:[[11.4,'归属：和上一轮完全一样　　最大移动量 0',false],[14,'归属没变 → 停',true],[18.4,`结果　<b style="color:${HWC[1]}">child0 = {A, B, C}</b>　　<b style="color:${HWC[2]}">child1 = {D, E, F}</b>`,false]]});
+
+/* 7 两个停止条件 */
+SC.push({title:'两个停止条件',dur:31,caps:[
+  [.4,9,'把三轮放在一起看。每一轮记两样东西：归属和上一轮比，变没变；两个质心里移动得更远的那个，移动了多少。'],
+  [9.2,18.4,'代码里的停止条件是：归属没变，或者最大移动量小于 1e-6，满足一个就停。这里第 3 轮归属没变，停。'],
+  [18.6,30.6,'归属没变的时候，质心是用同一批点算出来的，一定也没动。所以平时都是靠“归属没变”停下来。那第二个条件什么时候起作用？看下一章。']],
+build(r){
+  const c={};e2Head(r,'三轮放在一起看').style.left='130px';
+  const cw=[120,330,470,260,200],xs=[130];cw.forEach(w=>xs.push(xs[xs.length-1]+w));
+  ['轮','归属（A B C D E F）','和上一轮比','最大移动量','停不停'].forEach((s,k)=>hwTxt(r,xs[k]+16,214,s,24,{color:'var(--graphite)'}));
+  const cmp=['第一次分（上一轮记作全是 −1）','C 变了','<b>完全一样</b>'];
+  c.rows=E2SP.iters.map((it,k)=>{const g=H('div','a',{left:130,top:256+96*k,width:xs[5]-130,height:96,borderTop:'1.5px solid rgba(27,38,49,.16)',opacity:0},r);
+    if(k===2)H('div','mk',{left:0,top:14,width:xs[5]-130,height:68},g);
+    H('div','a',{left:16,top:26,fontSize:34,fontWeight:700,lineHeight:'44px'},g,String(k+1));
+    H('div','a',{left:cw[0]+16,top:26,fontSize:36,fontFamily:'var(--num)',letterSpacing:'.3em',lineHeight:'44px'},g,it.nb.map((b,i)=>`<span style="color:${HWC[b+1]}${k&&it.prev[i]!==b?';text-decoration:underline':''}">${b}</span>`).join(''));
+    H('div','a',{left:cw[0]+cw[1]+16,top:26,fontSize:28,lineHeight:'44px'},g,cmp[k]);
+    H('div','a',{left:cw[0]+cw[1]+cw[2]+16,top:26,fontSize:36,fontFamily:'var(--num)',lineHeight:'44px'},g,hwF(it.maxMove));
+    H('div','a',{left:cw[0]+cw[1]+cw[2]+cw[3]+16,top:26,fontSize:30,fontWeight:700,lineHeight:'44px',color:it.stop?'var(--red)':'var(--graphite)'},g,it.stop?'停':'继续');return g;});
+  c.code=hwMono(r,146,580,'<span class="kw">if</span> (same || maxMove &lt; 1e-6L) { <span class="kw">break</span>; }',40,{fontWeight:700});
+  c.ex=[hwTxt(r,146,656,'<span style="font-family:var(--mono)">same</span>：这一轮的归属和上一轮完全一样　　<span style="font-family:var(--mono)">maxMove</span>：两个质心里移动得更远的那个距离　　<span style="font-family:var(--mono)">||</span>：满足一个就行',26,{color:'var(--graphite)'}),
+        hwHand(r,146,730,'归属没变 → 质心一定没动。平时都是靠 same 停下来',40)];
+  return c;
+},
+update(c,t){
+  c.rows.forEach((g,k)=>vis(g,ep(t,1+1.6*k,1.6+1.6*k),8));
+  vis(c.code,ep(t,9.4,10),8);vis(c.ex[0],ep(t,11.4,12),8);vis(c.ex[1],ep(t,19,19.6),8);
+}});
+
+/* 8 只有两个点的簇 */
+(function(){
+  const R=hwRunOf('two'),sp=R.rounds[0].split,it=sp.iters[0],PL={x:230,y:214,u:66,xmax:8,ymax:7,coord:true};
+  SC.push({title:'只有两个点的簇',dur:25,caps:[
+    [.4,8,'看一个只有两个点的簇。初始质心就是这两个点自己。分配：A 归 0 号，B 归 1 号。'],
+    [8.2,16.4,'这是第一轮，上一轮的归属记作全是 −1，所以“归属没变”不成立。但是每个簇只有一个点，新质心还是它自己，移动量是 0。'],
+    [16.6,24.6,'于是靠第二个条件“最大移动量小于 1e-6”停下来，只跑了一轮。只有两个点的簇，都是这样停的。']],
+  build(r){
+    const c={};c.km=e2Km(r,R.pts,sp,PL);e2Head(r,'只有两个点的簇（用例 03）');
+    hwTxt(r,230,730,'A (2, 3)　B (5, 5)',26,{color:'var(--graphite)'});
+    c.a=[hwTxt(r,1020,214,`初始质心：<b style="color:${HWC[1]}">c0 = A</b>，<b style="color:${HWC[2]}">c1 = B</b>`,32),
+         hwTxt(r,1020,276,`第 1 轮分配：<b style="color:${HWC[1]}">A 归 0 号</b>，<b style="color:${HWC[2]}">B 归 1 号</b>`,32)];
+    c.tb=[['<span style="font-family:var(--mono)">same</span>（归属没变）','上一轮全是 −1 → <b style="color:var(--red)">false</b>'],['<span style="font-family:var(--mono)">maxMove</span>（最大移动量）','新质心还是点自己 → <b style="color:var(--blue)">0</b>']].map(([x,y],k)=>{
+      const g=H('div','a',{left:1020,top:372+92*k,width:800,height:92,borderTop:'1.5px solid rgba(27,38,49,.16)'},r);
+      H('div','a',{left:8,top:26,fontSize:28},g,x);H('div','a',{left:372,top:26,fontSize:30},g,y);return g;});
+    c.code=hwMono(r,1020,586,'same || <span style="background:var(--marker)">maxMove &lt; 1e-6L</span>　→　停',34,{fontWeight:700});
+    c.n=hwHand(r,1020,680,'靠第二个条件停，只跑 1 轮',40);
+    return c;
+  },
+  update(c,t){
+    const a=2*ep(t,4.4,6);c.km.view(0,a,0);
+    hwSeq(c.a,t,1.2,3.2);c.tb.forEach((g,k)=>vis(g,ep(t,8.6+3.4*k,9.2+3.4*k),8));vis(c.code,ep(t,16.8,17.4),8);vis(c.n,ep(t,19.4,20),8);
+  }});
+})();
+
+/* 9 距离相等归 0 号 */
+(function(){
+  const R=hwRunOf('tie'),sp=R.rounds[0].split,it=sp.iters[0],PL={x:170,y:250,u:84,xmax:9,ymax:5,coord:true};
+  SC.push({title:'距离相等归 0 号',dur:23,caps:[
+    [.4,8,'还有一种情况：一个点到两个质心一样远。这里 B 到 c0 是 20，到 c1 也是 20，正好在中垂线上。'],
+    [8.2,15.2,'代码的判断是：d0 小于等于 d1，就归 0 号。相等时这个条件成立，所以 B 归 0 号。'],
+    [15.4,22.6,'这是这份代码的约定：平局归 0 号。如果写成小于号，B 就会归 1 号，结果就不一样了。']],
+  build(r){
+    const c={};c.km=e2Km(r,R.pts,sp,PL);e2Head(r,'一样远怎么办（用例 04）');
+    c.f=e2Formula(r,1020,220,R.pts[1],it);
+    c.eq=hwTxt(r,1020,330,'20 = 20　一样远',44,{fontWeight:700,color:'var(--red)'});
+    c.code=hwCode(r,1020,430,['if (d0 <= d1) {','    newBelong[i] = 0;','} else {','    newBelong[i] = 1;','}'],28,42,'21.cpp · 分配');
+    c.n=hwHand(r,1020,720,'等号在 <= 里：平局归 0 号',40);
+    return c;
+  },
+  update(c,t){
+    const a=ep(t,1,1.8)+ep(t,9.4,10.4)+ep(t,10.6,11.4);
+    c.km.view(0,a,0,{bis:ep(t,4.6,5.4)*.85});c.km.focus(1,hwWin(t,2,9.4));
+    vis(c.f,ep(t,2.2,2.8),0);vis(c.eq,ep(t,5.6,6.2),8);
+    c.code.box.style.opacity=ep(t,8.4,9);c.code.set(t<8.6?null:t<10.6?0:1);vis(c.n,ep(t,15.6,16.2),8);
+  }});
+})();
+
+/* 10 初始质心只是起点 */
+(function(){
+  const R=hwRunOf('seed'),sp=R.rounds[0].split,n=R.pts.length,T0=3,PER=4;
+  SC.push({title:'初始质心只是起点',dur:32,caps:[
+    [.4,7.4,'再看一个 6 个点的例子。x 最小的是 A，x 最大的是 F，所以 c1 一开始放在 F 上。'],
+    [7.6,19,'第 2 轮 C 改归 1 号；第 3 轮 F 改归 0 号；第 4 轮不再变化，停。一共跑了 4 轮。'],
+    [19.2,31.6,'注意 F：c1 一开始就放在它身上，最后它却归了 0 号簇。初始质心只决定从哪里出发，最后的两个簇是一轮一轮算出来的。']],
+  build(r){
+    const c={};c.km=e2Km(r,R.pts,sp,{x:150,y:214,u:66,xmax:12,ymax:7,lab:{5:{dx:-20,dy:-19,anchor:'end'}}});c.km.C[0].label('c0',-30,8,'end');e2Head(r,'跑了 4 轮的例子（用例 06）');
+    hwTxt(r,1020+110,214,'归属（A B C D E F）',24,{color:'var(--graphite)'});hwTxt(r,1020+470,214,'变化',24,{color:'var(--graphite)'});
+    const chg=['第一次分','C：0 → 1','F：1 → 0','没变，停'];
+    c.rows=sp.iters.map((it,k)=>{const g=H('div','a',{left:1020,top:254+84*k,width:800,height:84,borderTop:'1.5px solid rgba(27,38,49,.16)',opacity:0},r);
+      H('div','a',{left:8,top:22,fontSize:28},g,`第 ${k+1} 轮`);
+      H('div','a',{left:110,top:16,fontSize:38,fontFamily:'var(--num)',letterSpacing:'.3em'},g,it.nb.map((b,i)=>`<span style="color:${HWC[b+1]}${k&&it.prev[i]!==b?';text-decoration:underline':''}">${b}</span>`).join(''));
+      H('div','a',{left:470,top:22,fontSize:28,fontWeight:k===3?700:400,color:k===3?'var(--red)':'var(--ink)'},g,chg[k]);return g;});
+    c.res=hwTxt(r,1020,612,`结果　<b style="color:${HWC[1]}">child0 = {A, B, F}</b>　　<b style="color:${HWC[2]}">child1 = {C, D, E}</b>`,30);
+    c.n=hwHand(r,1020,690,'F 是 c1 的起点，最后却归了 0 号',40);
+    c.n2=hwTxt(r,1020,760,'初始质心只决定从哪里出发',28,{color:'var(--graphite)'});
+    return c;
+  },
+  update(c,t){
+    const k=clamp(Math.floor((t-T0)/PER),0,3),lt=t-T0-PER*k;
+    const uu=k===3?ep(lt,2,3):ep(lt,2.2,3.4),it=sp.iters[k];
+    if(lerp(it.c1.y,it.nc1.y,uu)<1)c.km.C[1].label('c1',-28,-22,'end');else c.km.C[1].label('c1',24,34,'start');
+    c.km.view(k,t<T0?0:n*pr(lt,0,1.5),uu,{bis:ep(t,T0,T0+.8)*.7});
+    c.rows.forEach((g,q)=>vis(g,ep(t,T0+PER*q+1.4,T0+PER*q+2),8));
+    c.km.focus(5,hwWin(t,19.4,31));vis(c.res,ep(t,19.4,20),8);vis(c.n,ep(t,21.4,22),8);vis(c.n2,ep(t,26,26.6),8);
+  }});
+})();
+
+/* 11 小结 */
+SC.push({title:'小结',dur:17,caps:[
+  [.4,8.4,'小结一下 K-means 拆一个簇的四步：选初始质心，分配，更新，判断要不要停。'],
+  [8.6,16.6,'下一集把它放回整个流程里：每一轮试拆所有的簇，选一个真正拆开，直到簇数达到 N。']],
+build(r){
+  const c={};
+  c.h=hwTxt(r,150,150,'K-means（K = 2）拆一个簇',64,{fontFamily:'var(--display)',fontWeight:900});
+  const st=[['1','选初始质心','x 最小的点 → c0，x 最大的点 → c1'],['2','分配','d0 &lt;= d1 归 0 号，否则归 1 号（一样远归 0 号）'],['3','更新','每个质心 = 自己那组点的坐标平均值'],['4','要不要停','归属没变，或最大移动量 &lt; 1e-6 → 停；否则回到第 2 步']];
+  c.st=st.map(([a,b,d],k)=>{const g=H('div','a',{left:150,top:270+100*k,width:1500,height:100,borderTop:'1.5px solid rgba(27,38,49,.14)'},r);
+    H('div','a',{left:10,top:18,fontSize:52,fontFamily:'var(--num)',color:'var(--blue)'},g,a);H('div','a',{left:90,top:28,fontSize:36,fontWeight:700},g,b);H('div','a',{left:360,top:32,fontSize:30},g,d);return g;});
+  c.res=hwTxt(r,150,690,'结果：两个子簇 <span style="font-family:var(--mono)">child0</span>、<span style="font-family:var(--mono)">child1</span>',32);
+  c.n=hwHand(r,150,770,'下一集：一轮一轮拆到 N 个簇',40);
+  return c;
+},
+update(c,t){vis(c.h,ep(t,.3,1),16);c.st.forEach((g,k)=>vis(g,ep(t,1.4+1.3*k,2+1.3*k),8));vis(c.res,ep(t,6.8,7.4),8);vis(c.n,ep(t,8.8,9.4),8);}});
+
+/* ================= 时间轴 ================= */
+let TOTAL=0;SC.forEach(s=>{s.t0=TOTAL;TOTAL+=s.dur;});
+const CAPS=[];SC.forEach(s=>s.caps.forEach(([a,b,x])=>CAPS.push([s.t0+a,s.t0+b,x])));
+const stage=document.getElementById('stage'),sceneEl=document.getElementById('scene'),chap=document.getElementById('chap');
+const capEl=document.getElementById('cap'),capSpan=capEl.firstElementChild,progFill=document.getElementById('progFill');
+SC.forEach((s,i)=>{if(i)H('div','tick',{left:s.t0/TOTAL*1920-1},document.getElementById('prog'));});
+let cur=-1,ctx=null;
+function seek(t){
+  t=clamp(t,0,TOTAL-1e-3);
+  const i=SC.findIndex(s=>t<s.t0+s.dur),s=SC[i],lt=t-s.t0;
+  if(i!==cur){sceneEl.innerHTML='';cur=i;ctx=s.build(sceneEl);chap.textContent=`${String(i+1).padStart(2,'0')} / ${String(SC.length).padStart(2,'0')}　${s.title}`;}
+  const fin=i===SC.length-1?1:1-pr(lt,s.dur-.45,s.dur);
+  sceneEl.style.opacity=Math.min(pr(lt,0,.45),fin);
+  s.update(ctx,lt);
+  const cp=CAPS.find(c=>t>=c[0]&&t<c[1]);
+  if(cp){if(capSpan.textContent!==cp[2])capSpan.textContent=cp[2];capEl.style.opacity=Math.min(pr(t,cp[0],cp[0]+.25),1-pr(t,cp[1]-.25,cp[1]));}
+  else capEl.style.opacity=0;
+  progFill.style.width=(t/TOTAL*100)+'%';
+  return i;
+}
+window.__seek=seek;window.__total=TOTAL;
+
+/* ================= 播放器 ================= */
+const wrap=document.getElementById('wrap'),holder=document.getElementById('holder');
+function fit(){
+  const sc=CAPTURE?1:Math.min(wrap.clientWidth/1920,wrap.clientHeight/1080);
+  holder.style.width=1920*sc+'px';holder.style.height=1080*sc+'px';stage.style.transform=`scale(${sc})`;
+}
+fit();addEventListener('resize',fit);
+if(CAPTURE){
+  const m=location.search.match(/[?&]t=([\d.]+)/);seek(m?+m[1]:0);
+  return;
+}
+const playBtn=document.getElementById('play'),timeEl=document.getElementById('time'),seekEl=document.getElementById('seek');
+const speedBtn=document.getElementById('speed'),chapWrap=document.getElementById('chapters');
+const ICON_PLAY='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>';
+const ICON_PAUSE='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>';
+seekEl.max=TOTAL;
+const chapBtns=SC.map((s,i)=>{const b=H('button',null,null,chapWrap,`${i+1} ${s.title}`);b.addEventListener('click',()=>{T=s.t0+.01;});return b;});
+const speeds=[1,1.25,1.5,.75];let si=0;
+let playing=true,T=0,last=null,dragging=false,shownIcon=null;
+const mmss=x=>{x=Math.max(0,Math.floor(x));return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');};
+function toggle(){if(T>=TOTAL-.05)T=0;playing=!playing;}
+playBtn.addEventListener('click',toggle);
+stage.addEventListener('click',toggle);
+speedBtn.addEventListener('click',()=>{si=(si+1)%speeds.length;speedBtn.textContent=speeds[si]+'×';});
+seekEl.addEventListener('input',()=>{T=+seekEl.value;dragging=true;});
+seekEl.addEventListener('change',()=>{dragging=false;});
+addEventListener('keydown',e=>{
+  if(e.target===seekEl&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
+  if(e.key===' '){e.preventDefault();toggle();}
+  else if(e.key==='ArrowLeft')T=Math.max(0,T-5);
+  else if(e.key==='ArrowRight')T=Math.min(TOTAL,T+5);
+  else if(/^[1-9]$/.test(e.key)&&SC[+e.key-1])T=SC[+e.key-1].t0+.01;
+});
+function frame(now){
+  if(last!==null&&playing&&!dragging){T+=(now-last)/1000*speeds[si];if(T>=TOTAL){T=TOTAL;playing=false;}}
+  last=now;
+  const i=seek(T);
+  if(!dragging)seekEl.value=T;
+  timeEl.textContent=mmss(T)+' / '+mmss(TOTAL);
+  const want=playing?'pause':'play';
+  if(shownIcon!==want){playBtn.innerHTML=playing?ICON_PAUSE:ICON_PLAY;shownIcon=want;}
+  chapBtns.forEach((b,k)=>b.classList.toggle('on',k===i));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

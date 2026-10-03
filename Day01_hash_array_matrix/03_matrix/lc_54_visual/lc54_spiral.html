@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LC54 螺旋矩阵讲解</title>
+<!-- 本地直接双击打开即可播放；不依赖网络。空格 播放/暂停，← → 快退/快进 5 秒，数字键 1-9 跳章节。 -->
+<style>
+/* 版式：作业本方格纸 + 蓝色圆珠笔 + 红笔批改 + 黄色荧光笔；1920×1080 固定舞台，按窗口等比缩放 */
+:root{
+  --paper:#F4F5F0; --gridA:#E5E9EA; --gridB:#D6DDE1;
+  --ink:#1B2631; --graphite:#66707A; --faint:#AFB7BD; --card:rgba(255,255,255,.64);
+  --blue:#2451C4; --blue-soft:rgba(36,81,196,.09);
+  --red:#CF3528; --marker:#FFE14D;
+  --display:"Noto Serif SC","Source Han Serif SC","STSong",serif;
+  --body:"Noto Sans SC","Microsoft YaHei","PingFang SC",sans-serif;
+  --hand:"KaiTi","STKaiti","楷体",serif;
+  --mono:"Cascadia Mono","Maple Mono NF CN",Consolas,monospace;
+  --num:"Bahnschrift","DIN Alternate","Segoe UI",sans-serif;
+  --chrome:#1D2125; --chrome-line:#383E44; --chrome-fg:#E6E8EA; --chrome-dim:#97A0A8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--chrome);overflow:hidden}
+#wrap{position:absolute;left:0;right:0;top:0;bottom:64px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#holder{position:relative;flex:none}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--gridB) 1px,transparent 1px),linear-gradient(90deg,var(--gridB) 1px,transparent 1px),
+    linear-gradient(var(--gridA) 1px,transparent 1px),linear-gradient(90deg,var(--gridA) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;background-position:-1px -1px;
+  font-family:var(--body);color:var(--ink);cursor:pointer}
+body.capture #wrap{bottom:0} body.capture #bar{display:none} body.capture #stage{cursor:default}
+#scene{position:absolute;inset:0}
+.a{position:absolute;white-space:nowrap}
+.cell{position:absolute;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);background:rgba(255,255,255,.72);
+  font-family:var(--num);border-radius:5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ghost{position:absolute;border:1.5px dashed var(--faint);border-radius:5px}
+.idx{font-family:var(--mono);color:var(--graphite);text-align:center}
+.hand{font-family:var(--hand);color:var(--red)}
+.mk{position:absolute;background:var(--marker);mix-blend-mode:multiply;border-radius:8px}
+.dot{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--blue)}
+.card{position:absolute;background:var(--card);border:1.5px solid rgba(27,38,49,.16);border-radius:10px}
+.code{position:absolute;background:rgba(255,255,255,.74);border:1.5px solid rgba(27,38,49,.18);border-radius:8px;padding:16px 24px 20px;font-family:var(--mono);color:var(--ink)}
+.code-title{font-family:var(--body);font-size:20px;color:var(--graphite);letter-spacing:.06em;margin-bottom:8px;line-height:1.5}
+.code .cl{white-space:pre;position:relative}
+.code-hl{position:absolute;left:12px;right:12px;background:var(--marker);mix-blend-mode:multiply;border-radius:4px;opacity:0}
+.kw{color:var(--blue)}
+svg.ov{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible;pointer-events:none}
+svg text{font-family:var(--mono)}
+svg circle,svg path,svg line{transform-box:fill-box;transform-origin:center}
+.lv{stroke:var(--gridB);stroke-width:1.5}
+.lv.zero{stroke:var(--faint);stroke-width:2}
+.lvl{fill:var(--graphite);font-size:20px}
+.seg{stroke:var(--blue);stroke-width:4;stroke-linecap:round;fill:none}
+.pt{fill:var(--blue);stroke:var(--paper);stroke-width:3}
+.pt.virt{fill:var(--paper);stroke:var(--blue);stroke-width:3.5}
+.pv{fill:var(--blue);font-family:var(--num);font-size:22px;text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+.halo{paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+.target{stroke:var(--red);stroke-width:2.5;stroke-dasharray:9 7}
+.ring{fill:none;stroke:var(--blue);stroke-width:3}
+.hs{font-family:var(--hand);fill:var(--red);font-size:26px}
+#hdr,#chap{position:absolute;top:42px;font-size:22px;color:var(--graphite);letter-spacing:.06em}
+#hdr{left:96px} #chap{right:96px;text-align:right}
+#hdr b{color:var(--ink);font-weight:600}
+#cap{position:absolute;left:120px;right:120px;bottom:40px;text-align:center;pointer-events:none}
+#cap span{display:inline-block;max-width:1640px;font-size:34px;line-height:1.55;padding:10px 26px;background:rgba(244,245,240,.95);
+  border-radius:6px;color:var(--ink);text-wrap:balance;box-shadow:0 0 0 1px rgba(27,38,49,.08)}
+#prog{position:absolute;left:0;bottom:0;height:5px;width:100%;background:var(--gridB)}
+#progFill{height:100%;background:var(--ink);width:0}
+.tick{position:absolute;top:0;width:3px;height:5px;background:var(--paper)}
+
+#bar{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--chrome-fg);font:14px var(--body)}
+#bar button{background:none;border:1px solid var(--chrome-line);color:var(--chrome-fg);border-radius:6px;height:34px;padding:0 12px;font:inherit;cursor:pointer;flex:none}
+#bar button:hover{border-color:#6A737C}
+#bar button:focus-visible,#seek:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+#play{width:46px;display:flex;align-items:center;justify-content:center}
+#play svg{width:16px;height:16px;fill:currentColor}
+#time{font-variant-numeric:tabular-nums;color:var(--chrome-dim);flex:none;min-width:98px}
+#seek{flex:1;min-width:80px;accent-color:#F2D24B}
+#chapters{display:flex;gap:6px;overflow-x:auto;max-width:52%;flex:none;scrollbar-width:none}
+#chapters button{height:28px;padding:0 8px;font-size:12px;color:var(--chrome-dim);white-space:nowrap}
+#chapters button.on{color:var(--chrome-fg);border-color:#F2D24B}
+@media (max-width:900px){#chapters{display:none}}
+@media (prefers-reduced-motion:reduce){#cap span{transition:none}}
+.cell.on{color:var(--blue);border-color:var(--blue);background:rgba(221,227,243,.94)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="holder"><div id="stage">
+  <div id="hdr"><b>LC 54</b>　螺旋矩阵 · 解法二</div>
+  <div id="chap"></div>
+  <div id="scene"></div>
+  <div id="cap"><span></span></div>
+  <div id="prog"><div id="progFill"></div></div>
+</div></div></div>
+<div id="bar">
+  <button id="play" aria-label="播放或暂停"></button>
+  <span id="time">00:00 / 00:00</span>
+  <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="播放进度">
+  <div id="chapters"></div>
+  <button id="speed" aria-label="播放速度">1×</button>
+</div>
+<script>
+(function(){
+const CAPTURE=/capture/.test(location.search);
+if(CAPTURE)document.body.classList.add('capture');
+
+/* ---------- 小工具 ---------- */
+const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eout=x=>1-Math.pow(1-x,3);
+const pr=(t,a,b)=>clamp((t-a)/(b-a));
+const ep=(t,a,b)=>ease(pr(t,a,b));
+const lerp=(a,b,p)=>a+(b-a)*p;
+const INK=[27,38,49],BLUE=[36,81,196],GRAY=[175,183,189];
+const mix=(a,b,p)=>`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*p)).join(',')})`;
+const NOPX={opacity:1,zIndex:1,fontWeight:1,lineHeight:1,flex:1};
+function H(tag,cls,css,parent,html){
+  const e=document.createElement(tag);if(cls)e.className=cls;
+  if(css)for(const k in css)e.style[k]=(typeof css[k]==='number'&&!NOPX[k])?css[k]+'px':css[k];
+  if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e;
+}
+const SVGNS='http://www.w3.org/2000/svg';
+function S(tag,attrs,parent,text){
+  const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);
+  if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;
+}
+function vis(e,a,dy=0,dx=0){e.style.opacity=a;e.style.transform=(dy||dx)?`translate(${(1-a)*dx}px,${(1-a)*dy}px)`:'';}
+function pop(e,a){e.style.opacity=a;e.style.transform=`scale(${.82+.18*a})`;}
+function drawable(el){
+  const len=el.getTotalLength();el.style.strokeDasharray=len+' '+(len+4);el.style.strokeDashoffset=len;
+  return {el,len,set(p){el.style.strokeDashoffset=len*(1-p);el.style.opacity=p>0?1:0;}};
+}
+// 手画的红笔圈：略微超过一圈、带一点倾斜
+function penCircle(g,cx,cy,a,b,color,w=3.2,rot=-9){
+  let d='',len=0,px=0,py=0;const n=72,turns=1.1,r=rot*Math.PI/180;
+  for(let k=0;k<=n;k++){
+    const th=-Math.PI*.62+k/n*turns*2*Math.PI,gr=1+.07*k/n;
+    const x=a*gr*Math.cos(th),y=b*gr*Math.sin(th);
+    const X=cx+x*Math.cos(r)-y*Math.sin(r),Y=cy+x*Math.sin(r)+y*Math.cos(r);
+    d+=(k?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);if(k)len+=Math.hypot(X-px,Y-py);px=X;py=Y;
+  }
+  const el=S('path',{d,fill:'none'},g);
+  Object.assign(el.style,{stroke:color,strokeWidth:w,strokeLinecap:'round',strokeLinejoin:'round',strokeDasharray:len+' '+(len+4),strokeDashoffset:len,opacity:0});
+  return {el,len,set(p){el.style.strokeDashoffset=len*(1-p);el.style.opacity=p>0?1:0;}};
+}
+// 方括号：一条括号 = 一段子数组
+function bracket(svg,x1,x2,y,color,label,dir=1,fs=20){
+  const g=S('g',{},svg);
+  const p=S('path',{d:`M${x1} ${y-8*dir} L${x1} ${y} L${x2} ${y} L${x2} ${y-8*dir}`,fill:'none'},g);
+  Object.assign(p.style,{stroke:color,strokeWidth:3.5,strokeLinecap:'round',strokeLinejoin:'round'});
+  const d=drawable(p);let tx=null;
+  if(label){tx=S('text',{x:x2+12,y:y+7,class:'halo'},g,label);tx.style.fill=color;tx.style.fontSize=fs+'px';tx.style.opacity=0;}
+  return {g,d,t:tx,set(pp,lp=pp){d.set(pp);if(tx)tx.style.opacity=lp;}};
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+const KW=/\b(int|for|while|if|return|auto|unordered_map|vector)\b/g;
+function codePanel(r,x,y,lines,fs,lh,title){
+  const box=H('div','code',{left:x,top:y,fontSize:fs,lineHeight:lh+'px'},r);
+  if(title)H('div','code-title',null,box,title);
+  const hl=H('div','code-hl',{height:lh},box);
+  const els=lines.map(l=>H('div','cl',null,box,l?esc(l).replace(KW,'<span class="kw">$1</span>'):' '));
+  let cur;
+  return {box,els,set(i){
+    if(i===cur)return;cur=i;
+    if(i==null){hl.style.opacity=0;}else{hl.style.opacity=.95;hl.style.top=els[i].offsetTop+'px';}
+  }};
+}
+
+/* ---------- 数据：全程用同一个例子（3 行 4 列） ---------- */
+const MAT=[[1,2,3,4],[5,6,7,8],[9,10,11,12]],M0=3,N0=4,SIZE=M0*N0;
+const DIRS=[[0,1],[1,0],[0,-1],[-1,0]],DNAME=['右','下','左','上'],DARR=['→','↓','←','↑'];
+const SEGS=[],PATH=[];     // 按解法二的代码模拟：SEGS 是每一段，PATH 是依次记录的格子
+(()=>{let m=M0,n=N0,i=0,j=-1,di=0;
+  while(PATH.length<SIZE){
+    const s={di,steps:n,n0:n,m0:m,from:PATH.length};
+    for(let k=0;k<n;k++){i+=DIRS[di][0];j+=DIRS[di][1];PATH.push({i,j,v:MAT[i][j],seg:SEGS.length});}
+    m--;s.m1=m;[n,m]=[m,n];s.n2=n;s.m2=m;SEGS.push(s);di=(di+1)%4;
+  }})();
+const fmt=v=>v<0?'−'+(-v):String(v);
+const sgn=v=>v>0?'+'+v:v<0?'−'+(-v):'0';
+
+const CODE=[
+'DIRS = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};  // 右 下 左 上',
+'int m = matrix.size(), n = matrix[0].size();',
+'int size = m * n;',
+'vector<int> ans;',
+'int i = 0, j = -1;',
+'for (int di = 0; ans.size() < size; di = (di + 1) % 4) {',
+'    for (int k = 0; k < n; k++) {',
+'        i += DIRS[di][0];',
+'        j += DIRS[di][1];',
+'        ans.push_back(matrix[i][j]);',
+'    }',
+'    m--;',
+'    swap(n, m);',
+'}',
+'return ans;'];
+
+// 矩阵格子
+function grid(r,x0,y0,w,pitch,fs){
+  const cells=MAT.map((row,i)=>row.map((v,j)=>H('div','cell',{left:x0+pitch*j,top:y0+pitch*i,width:w,height:w,fontSize:fs},r,String(v))));
+  return {cells,w,pitch,x:j=>x0+pitch*j,y:i=>y0+pitch*i,cx:j=>x0+pitch*j+w/2,cy:i=>y0+pitch*i+w/2,
+    on(i,j,a){cells[i][j].classList.toggle('on',a);}};
+}
+// 每一段一条线；outside=true 时第一段从 (0,-1) 出发
+function segLines(svg,g,outside){
+  return SEGS.map(s=>{
+    const a=s.from?PATH[s.from-1]:{i:0,j:outside?-1:0},b=PATH[s.from+s.steps-1];
+    const ln=S('line',{x1:g.cx(a.j),y1:g.cy(a.i),x2:g.cx(b.j),y2:g.cy(b.i),class:'seg'},svg);ln.style.strokeWidth=7;
+    return drawable(ln);
+  });
+}
+function ring(r,size=44){return H('div','a',{width:size,height:size,border:'6px solid var(--red)',borderRadius:'50%',opacity:0,boxSizing:'border-box'},r);}
+function putRing(e,x,y,size=44){e.style.left=(x-size/2)+'px';e.style.top=(y-size/2)+'px';}
+
+/* ================= 场景 ================= */
+const SC=[];
+
+/* 1 题目 */
+SC.push({title:'题目',dur:14,caps:[
+  [.5,6,'题目：按顺时针螺旋的顺序，输出矩阵里的所有数。'],
+  [6.2,13.6,'螺旋是一段一段的直线。每一段只要知道两件事：往哪走，走几步。']],
+build(r){
+  const c={};
+  c.eb=H('div','a',{left:164,top:170,fontFamily:'var(--mono)',fontSize:30,color:'var(--graphite)',letterSpacing:'.04em'},r,'LeetCode 54 · 矩阵 / 模拟');
+  c.ti=H('div','a',{left:154,top:214,fontFamily:'var(--display)',fontSize:124,fontWeight:900,letterSpacing:'.02em',lineHeight:1.2},r,'螺旋矩阵');
+  c.sub=H('div','a',{left:164,top:392,fontSize:38},r,'解法二：一张方向表，加一对会交换的 <b style="color:var(--blue)">n 和 m</b>');
+  c.svg=S('svg',{class:'ov'},r);
+  c.g=grid(r,164,500,100,112,40);
+  let d='';PATH.forEach((p,k)=>d+=(k?'L':'M')+c.g.cx(p.j)+' '+c.g.cy(p.i));
+  const pl=S('path',{d,fill:'none'},c.svg);Object.assign(pl.style,{stroke:'var(--red)',strokeWidth:7,strokeLinecap:'round',strokeLinejoin:'round'});
+  c.path=drawable(pl);
+  c.ol=H('div','a',{left:720,top:508,fontSize:26,color:'var(--graphite)'},r,'输出');
+  c.out=PATH.map((p,k)=>H('div','a',{left:720+92*k,top:548,width:80,textAlign:'center',fontFamily:'var(--num)',fontSize:52,lineHeight:1.1},r,String(p.v)));
+  c.q1=H('div','a hand',{left:720,top:680,fontSize:40},r,'每一段直线，只要回答两个问题');
+  c.q2=H('div','a',{left:720,top:748,fontFamily:'var(--display)',fontSize:60,fontWeight:900},r,'① 往哪走　　② 走几步');
+  return c;
+},
+update(c,t){
+  vis(c.eb,ep(t,.2,.9),16);vis(c.ti,ep(t,.35,1.2),24);vis(c.sub,ep(t,.9,1.7),16);
+  c.g.cells.forEach((row,i)=>row.forEach((e,j)=>pop(e,ep(t,1.6+.07*(i*4+j),2.1+.07*(i*4+j)))));
+  const p=pr(t,3,6);c.path.set(ease(p));
+  c.ol.style.opacity=ep(t,2.8,3.3);
+  c.out.forEach((e,k)=>vis(e,ep(t,3+3*k/11,3.3+3*k/11),-10));
+  vis(c.q1,ep(t,6.6,7.3),10);vis(c.q2,ep(t,8,8.8),12);
+}});
+
+/* 2 往哪走：方向表 */
+SC.push({title:'往哪走：方向表',dur:18,caps:[
+  [.3,6,'往哪走：把四个方向存成一张表。每个方向是一对数：行号变多少，列号变多少。'],
+  [6.2,12,'走一步，就是把这一对数加到 i 和 j 上。向右是 (0, +1)：行不变，列加 1。'],
+  [12.2,17.6,'走完一段换下一个方向：di = (di + 1) % 4，按右、下、左、上循环。']],
+build(r){
+  const c={};
+  c.hd=[['di',130],['方向',250],['行 i 变化',470],['列 j 变化',690]].map(([s,x])=>H('div','a',{left:x,top:176,fontSize:26,color:'var(--graphite)'},r,s));
+  c.mk=H('div','mk',{left:108,top:0,width:800,height:76,opacity:0},r);
+  c.rows=DIRS.map((d,k)=>{
+    const y=236+92*k,g=H('div','a',{left:108,top:y,width:800,height:92,borderTop:'1.5px solid rgba(27,38,49,.14)'},r);
+    H('div','a',{left:22,top:20,fontFamily:'var(--mono)',fontSize:40},g,String(k));
+    H('div','a',{left:142,top:14,fontSize:44},g,`<span style="font-family:var(--num)">${DARR[k]}</span>　${DNAME[k]}`);
+    d.forEach((v,q)=>H('div','a',{left:362+220*q,top:12,width:120,textAlign:'center',fontFamily:'var(--num)',fontSize:52,color:v>0?'var(--blue)':v<0?'var(--red)':'var(--faint)'},g,sgn(v)));
+    return g;
+  });
+  c.code=H('div','a',{left:124,top:640,fontFamily:'var(--mono)',fontSize:36},r,'i += DIRS[di][0];　　j += DIRS[di][1];');
+  c.cn=H('div','a hand',{left:124,top:706,fontSize:34},r,'走一步 = 把这一行的两个数加到 i、j 上');
+  // 右边：从 (i, j) 出发的四个方向
+  const X=j=>1150+176*j,Y=i=>150+176*i,W=124;
+  c.nb=[];
+  [[1,2,'(i, j+1)'],[2,1,'(i+1, j)'],[1,0,'(i, j−1)'],[0,1,'(i−1, j)']].forEach(([i,j,s])=>{
+    const g=H('div','ghost',{left:X(j),top:Y(i),width:W,height:W},r);
+    H('div',null,{width:'100%',textAlign:'center',lineHeight:(W-4)+'px',fontFamily:'var(--mono)',fontSize:22,color:'var(--graphite)'},g,s);c.nb.push(g);});
+  c.ctr=H('div','cell',{left:X(1),top:Y(1),width:W,height:W,fontSize:28,fontFamily:'var(--mono)'},r,'(i, j)');
+  c.svg=S('svg',{class:'ov'},r);
+  const cx=X(1)+W/2,cy=Y(1)+W/2;
+  c.ar=DIRS.map(([di,dj])=>{
+    const x1=cx+dj*70,y1=cy+di*70,x2=cx+dj*96,y2=cy+di*96,g=S('g',{},c.svg);
+    const ln=S('line',{x1,y1,x2,y2},g);Object.assign(ln.style,{stroke:'var(--red)',strokeWidth:6,strokeLinecap:'round'});
+    const a=Math.atan2(y2-y1,x2-x1),L=22,Wd=12,bx=x2-L*Math.cos(a),by=y2-L*Math.sin(a);
+    const h=S('path',{d:`M${x2+10*Math.cos(a)} ${y2+10*Math.sin(a)} L${bx-Wd*Math.sin(a)} ${by+Wd*Math.cos(a)} L${bx+Wd*Math.sin(a)} ${by-Wd*Math.cos(a)} Z`},g);h.style.fill='var(--red)';
+    return g;
+  });
+  c.cy1=H('div','a',{left:1120,top:690,fontSize:44},r,'右 → 下 → 左 → 上 → 右 → ……');
+  c.cy2=H('div','a',{left:1120,top:762,fontFamily:'var(--mono)',fontSize:36},r,'di = (di + 1) % 4');
+  c.cy3=H('div','a',{left:1120,top:824,fontSize:26,color:'var(--graphite)'},r,'(3 + 1) % 4 = 0：走完“上”，又回到“右”');
+  return c;
+},
+update(c,t){
+  c.hd.forEach((e,k)=>vis(e,ep(t,.2+.08*k,.8+.08*k),8));
+  c.rows.forEach((g,k)=>vis(g,ep(t,1+1.1*k,1.5+1.1*k),10));
+  pop(c.ctr,ep(t,.5,1));
+  c.nb.forEach((g,k)=>g.style.opacity=ep(t,1.1+1.1*k,1.6+1.1*k));
+  c.ar.forEach((g,k)=>{const a=ep(t,1.2+1.1*k,1.7+1.1*k),hl=(t>6.2&&t<12)?(k===0?1:.25):1;g.style.opacity=a*hl;});
+  const k=t<1?-1:t<6.2?Math.min(3,Math.floor((t-1)/1.1)):t<12.2?0:-1;
+  if(k>=0){c.mk.style.top=(244+92*k)+'px';c.mk.style.opacity=.85;}else c.mk.style.opacity=.85*(1-ep(t,12.2,12.6))*(t>=12.2?1:0);
+  vis(c.code,ep(t,6.4,7),10);vis(c.cn,ep(t,7.4,8),8);
+  vis(c.cy1,ep(t,12.4,13),10);vis(c.cy2,ep(t,13.4,14),10);vis(c.cy3,ep(t,14.6,15.2),8);
+}});
+
+/* 3 从 (0, −1) 出发 */
+SC.push({title:'从 (0, −1) 出发',dur:12,caps:[
+  [.3,6,'起点放在 (0, −1)：第一个格子左边、矩阵外面的位置。'],
+  [6.2,11.6,'这样每一步都是同一个动作：先走一步，再记录。第一步正好落在 (0, 0)，不用单独处理。']],
+build(r){
+  const c={};
+  c.ti=H('div','a',{left:120,top:150,fontFamily:'var(--display)',fontSize:60,fontWeight:900},r,'起点在矩阵外面');
+  const lines=['int i = 0, j = -1;','i += DIRS[di][0];','j += DIRS[di][1];　　　// 先走一步','ans.push_back(matrix[i][j]);　// 再记录'];
+  c.mk=H('div','mk',{left:108,top:0,width:700,height:52,opacity:0},r);
+  c.ln=lines.map((s,k)=>H('div','a',{left:124,top:300+64*k,fontFamily:'var(--mono)',fontSize:30},r,esc(s)));
+  c.note=H('div','a hand',{left:124,top:600,fontSize:40},r,'每一步都一样：先走，再记录');
+  c.svg=S('svg',{class:'ov'},r);
+  c.g=grid(r,1100,300,110,122,42);
+  c.gh=H('div','ghost',{left:978,top:300,width:110,height:110},r);
+  c.gl=H('div','a hand',{left:948,top:250,width:170,textAlign:'center',fontSize:32},r,'(0, −1)');
+  c.gn=H('div','a',{left:948,top:420,width:170,textAlign:'center',fontSize:22,color:'var(--graphite)'},r,'矩阵外面');
+  c.line=drawable(S('line',{x1:c.g.cx(-1),y1:c.g.cy(0),x2:c.g.cx(0),y2:c.g.cy(0),class:'seg'},c.svg));
+  c.ring=ring(r);
+  c.ans=H('div','a',{left:1100,top:700,fontFamily:'var(--mono)',fontSize:36},r,'ans = [1]');
+  return c;
+},
+update(c,t){
+  vis(c.ti,ep(t,.2,.9),14);
+  c.ln.forEach((e,k)=>vis(e,ep(t,.6+.15*k,1.2+.15*k),8));
+  c.g.cells.forEach((row,i)=>row.forEach((e,j)=>pop(e,ep(t,.4+.04*(i*4+j),.9+.04*(i*4+j)))));
+  c.gh.style.opacity=ep(t,1.2,1.8);vis(c.gl,ep(t,1.6,2.2),8);c.gn.style.opacity=ep(t,2,2.6);
+  const mv=ep(t,7,7.9);
+  c.ring.style.opacity=ep(t,1.8,2.3);putRing(c.ring,lerp(c.g.cx(-1),c.g.cx(0),mv),c.g.cy(0));
+  c.line.set(mv);c.g.on(0,0,t>=8.3);
+  const k=t<1.6?-1:t<7?0:t<7.6?1:t<8.3?2:3;
+  if(k>=0){c.mk.style.top=(296+64*k)+'px';c.mk.style.opacity=.85;}else c.mk.style.opacity=0;
+  vis(c.ans,ep(t,8.4,9),10);vis(c.note,ep(t,9.2,9.9),10);
+}});
+
+/* 4 每段走几步 */
+SC.push({title:'每段走几步',dur:22,caps:[
+  [.3,5.5,'走几步：第 1 段向右，走满一行，一共 n = 4 步。'],
+  [5.7,11.5,'第一行用完了，竖着只剩 m − 1 = 2 行，所以第 2 段向下走 2 步。'],
+  [11.7,16.5,'最右一列也用完了，横着只剩 n − 1 = 3 列，第 3 段向左走 3 步。'],
+  [16.7,21.6,'规律：横竖交替，每一段的步数都是“另一个方向还剩多长”。4、2、3、1、2。']],
+build(r){
+  const c={};
+  c.svg=S('svg',{class:'ov'},r);
+  c.g=grid(r,170,240,124,138,48);
+  c.segs=segLines(c.svg,c.g,false);
+  // 竖括号：还剩 2 行；横括号：还剩 3 列
+  const bx=c.g.x(3)+124+22,y1=c.g.y(1)+6,y2=c.g.y(2)+118;
+  const vb=S('path',{d:`M${bx-9} ${y1} L${bx} ${y1} L${bx} ${y2} L${bx-9} ${y2}`,fill:'none'},c.svg);
+  Object.assign(vb.style,{stroke:'var(--red)',strokeWidth:3.5,strokeLinecap:'round',strokeLinejoin:'round'});c.vb=drawable(vb);
+  c.vl=H('div','a hand',{left:bx+14,top:(y1+y2)/2-22,fontSize:32},r,'还剩 2 行');
+  c.hb=bracket(c.svg,c.g.x(0)+6,c.g.x(2)+118,c.g.y(2)+124+22,'var(--red)',null,1);
+  c.hl=H('div','a hand',{left:c.g.x(0)+110,top:c.g.y(2)+124+34,fontSize:32},r,'还剩 3 列');
+  const F=['n','m − 1','n − 1','m − 2','n − 2'];
+  c.rows=SEGS.map((s,k)=>{
+    const g=H('div','a',{left:1010,top:226+88*k,width:800,height:88,borderTop:'1.5px solid rgba(27,38,49,.14)'},r);
+    H('div','a',{left:0,top:24,fontSize:28,color:'var(--graphite)'},g,`第 ${k+1} 段`);
+    H('div','a',{left:150,top:12,fontSize:42},g,`<span style="font-family:var(--num)">${DARR[s.di]}</span> ${DNAME[s.di]}`);
+    H('div','a',{left:330,top:4,fontFamily:'var(--num)',fontSize:60,color:'var(--blue)',lineHeight:1.2},g,String(s.steps));
+    H('div','a',{left:384,top:28,fontSize:26},g,'步');
+    H('div','a',{left:480,top:18,fontFamily:'var(--mono)',fontSize:34,color:'var(--graphite)'},g,'= '+F[k]);
+    return g;
+  });
+  c.sum=H('div','a hand',{left:1010,top:700,fontSize:38},r,'横着：4 → 3 → 2　　竖着：2 → 1');
+  return c;
+},
+update(c,t){
+  c.g.cells.forEach((row,i)=>row.forEach((e,j)=>pop(e,ep(t,.2+.03*(i*4+j),.6+.03*(i*4+j)))));
+  const T=[[1.2,3.4],[7.6,8.8],[13.2,14.8],[17.2,17.9],[18.4,19.4]];
+  SEGS.forEach((s,k)=>{
+    const p=pr(t,T[k][0],T[k][1]);c.segs[k].set(ease(p));
+    for(let q=0;q<s.steps;q++){const pt=PATH[s.from+q];c.g.on(pt.i,pt.j,p*s.steps>=q+.6||(k===0&&q===0&&p>0));}
+    vis(c.rows[k],ep(t,T[k][0]-.2,T[k][0]+.4),10);
+  });
+  const vOff=1-ep(t,11.6,12.2);c.vb.set(ep(t,5.9,6.7));c.vb.el.style.opacity=t>5.9?vOff:0;c.vl.style.opacity=ep(t,6.4,6.9)*vOff;
+  const hOff=1-ep(t,16.6,17.2);c.hb.set(ep(t,11.9,12.7));c.hb.g.style.opacity=t>11.9?hOff:0;c.hl.style.opacity=ep(t,12.4,12.9)*hOff;
+  vis(c.sum,ep(t,19.6,20.3),10);
+}});
+
+/* 5 m-- 和 swap */
+SC.push({title:'m-- 和 swap',dur:24,caps:[
+  [.3,6.5,'代码里只用两个变量。n 是“这一段要走的步数”，m 是“另一个方向的长度”。'],
+  [6.7,13.5,'走完一段，这一段占掉了一行或一列，所以另一个方向少 1：m--。'],
+  [13.7,23.6,'接着要拐弯，下一段走的正是“另一个方向”，于是 swap(n, m)，把它换到 n 里。每一段都是这三步。']],
+build(r){
+  const c={},BX=[190,560];c.BX=BX;
+  ['n','m'].forEach((s,k)=>{
+    H('div','a',{left:BX[k],top:196,width:240,textAlign:'center',fontFamily:'var(--mono)',fontSize:48,fontWeight:700},r,s);
+    H('div','card',{left:BX[k],top:270,width:240,height:190},r);
+    H('div','a',{left:BX[k]-40,top:476,width:320,textAlign:'center',fontSize:26,color:'var(--graphite)'},r,k?'另一个方向的长度':'这一段要走的步数');
+  });
+  c.v=[0,1].map(k=>H('div','a',{left:BX[k],top:286,width:240,textAlign:'center',fontFamily:'var(--num)',fontSize:130,lineHeight:1.2},r,''));
+  c.mk=H('div','mk',{left:0,top:582,width:268,height:84,opacity:0},r);
+  c.chips=['① 走 n 步','② m--','③ swap(n, m)'].map((s,k)=>H('div','a',{left:150+290*k,top:590,width:252,height:68,textAlign:'center',lineHeight:'64px',fontFamily:'var(--mono)',fontSize:30,border:'2px solid var(--ink)',borderRadius:'8px',background:'rgba(255,255,255,.6)'},r,s));
+  c.h=['第一行走完了：竖着只剩 2 行','n = 2：下一段向下，走 2 步','m = 4 是横向的长度，轮到它之前还会再减 1'].map((s,k)=>H('div','a hand',{left:154,top:716+(k===2?62:0),fontSize:36},r,s));
+  c.svg=S('svg',{class:'ov'},r);
+  c.g=grid(r,1180,250,104,116,40);
+  c.segs=segLines(c.svg,c.g,false);
+  const bx=c.g.x(3)+104+20,y1=c.g.y(1)+6,y2=c.g.y(2)+98;
+  const vb=S('path',{d:`M${bx-9} ${y1} L${bx} ${y1} L${bx} ${y2} L${bx-9} ${y2}`,fill:'none'},c.svg);
+  Object.assign(vb.style,{stroke:'var(--red)',strokeWidth:3.5,strokeLinecap:'round',strokeLinejoin:'round'});c.vb=drawable(vb);
+  c.vl=H('div','a hand',{left:bx+12,top:(y1+y2)/2-20,fontSize:30},r,'剩 2 行');
+  return c;
+},
+update(c,t){
+  const BX=c.BX;
+  c.g.cells.forEach((row,i)=>row.forEach((e,j)=>pop(e,ep(t,.3+.03*(i*4+j),.7+.03*(i*4+j)))));
+  const p0=pr(t,2.6,5),p1=pr(t,18,19.2);
+  c.segs[0].set(ease(p0));c.segs[1].set(ease(p1));
+  for(let q=0;q<4;q++)c.g.on(0,q,p0*4>=q+.6||(q===0&&p0>0));
+  for(let q=0;q<2;q++)c.g.on(1+q,3,p1*2>=q+.6);
+  c.vb.set(ep(t,7.2,8));c.vl.style.opacity=ep(t,7.8,8.3);
+  // n、m 的值：m 在 9.6 减 1；15~16.4 交换
+  const dec=t>=9.6,sw=ep(t,15,16.4),done=sw>=1;
+  const nv=done?2:4,mv=done?4:(dec?2:3);
+  [nv,mv].forEach((v,k)=>{
+    const e=c.v[k];e.textContent=String(v);
+    const dx=done?0:(k?-1:1)*(BX[1]-BX[0])*sw,dy=done?0:(k?1:-1)*46*Math.sin(Math.PI*sw);
+    const b=k===1?ep(t,9.4,9.6)*(1-ep(t,9.6,10.2)):0;
+    e.style.transform=`translate(${dx}px,${dy}px) scale(${1+.2*b})`;
+    e.style.color=(k===1&&dec&&!done&&t<13.6)?'var(--red)':(done&&k===0&&t<19.6)?'var(--blue)':'';
+    e.style.opacity=ep(t,.6,1.2);
+  });
+  const ph=t<1.6?-1:t<6.7?0:t<13.7?1:2;
+  c.chips.forEach((e,k)=>vis(e,ep(t,1.4+.2*k,2+.2*k),8));
+  if(ph>=0){c.mk.style.left=(142+290*ph)+'px';c.mk.style.opacity=.85;}else c.mk.style.opacity=0;
+  vis(c.h[0],ep(t,8.4,9)*(1-ep(t,13.5,13.9)),8);vis(c.h[1],ep(t,17,17.6),8);vis(c.h[2],ep(t,20,20.6),8);
+}});
+
+/* 6 完整走一遍 */
+const WK={T0:3,TURN:1,STEP:.6,POST:.4,DEC:1.3,SWP:1.5};
+(()=>{let tt=WK.T0;SEGS.forEach(s=>{s.t0=tt;s.tStep=tt+WK.TURN;s.tDec=s.tStep+WK.STEP*s.steps+WK.POST;s.tSwp=s.tDec+WK.DEC;s.t1=s.tSwp+WK.SWP;tt=s.t1;});WK.END=tt;})();
+const S6=[[.3,2.8,'完整走一遍。m = 3，n = 4，size = 12，从 (0, −1) 出发。']];
+[
+ '第 1 段：向右走 n = 4 步。走完，第一行用掉了：m 减成 2，再和 n 交换。',
+ '第 2 段：向下走 n = 2 步。最右一列用掉了：m 从 4 减成 3，再交换。',
+ '第 3 段：向左走 n = 3 步。然后 m 从 2 减成 1，交换。',
+ '第 4 段：向上走 n = 1 步。然后 m 从 3 减成 2，交换。',
+ '第 5 段：向右走 n = 2 步。ans 里已经有 12 个数，循环结束。'
+].forEach((s,k)=>S6.push([SEGS[k].t0+.15,SEGS[k].t1-.15,s]));
+S6.push([WK.END+.2,WK.END+3.6,'五段的步数是 4、2、3、1、2。最后 n = 0、m = 2，ans 就是答案。']);
+SC.push({title:'完整走一遍',dur:WK.END+3.8,caps:S6,
+build(r){
+  const c={};
+  c.code=codePanel(r,96,150,CODE,21,38,'解法二');
+  c.svg=S('svg',{class:'ov'},r);
+  c.g=grid(r,1030,236,100,112,38);
+  c.gh=H('div','ghost',{left:918,top:236,width:100,height:100},r);
+  c.gl=H('div','a idx',{left:898,top:200,width:140,fontSize:22},r,'(0, −1)');
+  c.segs=segLines(c.svg,c.g,true);
+  c.ring=ring(r);
+  // n、m
+  const BX=[1556,1708];c.BX=BX;
+  ['n','m'].forEach((s,k)=>{
+    H('div','a',{left:BX[k],top:186,width:124,textAlign:'center',fontFamily:'var(--mono)',fontSize:34,fontWeight:700},r,s);
+    H('div','card',{left:BX[k],top:236,width:124,height:100},r);
+    H('div','a',{left:BX[k]-14,top:344,width:152,textAlign:'center',fontSize:19,color:'var(--graphite)'},r,k?'另一个方向':'这一段的步数');
+  });
+  c.v=[0,1].map(k=>H('div','a',{left:BX[k],top:240,width:124,textAlign:'center',fontFamily:'var(--num)',fontSize:72,lineHeight:1.25},r,''));
+  c.dl=H('div','a',{left:1556,top:412,fontFamily:'var(--mono)',fontSize:28},r,'');
+  c.da=H('div','a',{left:1556,top:452,fontFamily:'var(--num)',fontSize:84,color:'var(--red)',lineHeight:1.1},r,'');
+  c.dn=H('div','a',{left:1650,top:484,fontSize:36},r,'');
+  c.al=H('div','a',{left:1030,top:598,fontSize:24,color:'var(--graphite)'},r,'');
+  c.ans=PATH.map((p,k)=>{H('div','ghost',{left:1030+62*k,top:636,width:54,height:54},r);
+    return H('div','cell',{left:1030+62*k,top:636,width:54,height:54,fontSize:26,opacity:0},r,String(p.v));});
+  c.s1=H('div','a',{left:1030,top:726,fontFamily:'var(--mono)',fontSize:28},r,'');
+  c.s2=H('div','a',{left:1030,top:776,fontFamily:'var(--mono)',fontSize:28},r,'');
+  return c;
+},
+update(c,t){
+  const g=c.g,BX=c.BX;
+  g.cells.forEach((row,i)=>row.forEach((e,j)=>e.style.opacity=ep(t,.2+.03*(i*4+j),.6+.03*(i*4+j))));
+  c.gh.style.opacity=ep(t,1.6,2.1);c.gl.style.opacity=ep(t,1.6,2.1);
+  let s=SEGS.findIndex(x=>t>=x.t0&&t<x.t1);const after=t>=WK.END,cur=s>=0?SEGS[s]:null;
+  // 每个格子：到达时刻、是否已记录
+  let rec=0,rx=g.cx(-1),ry=g.cy(0);
+  PATH.forEach((p,k)=>{
+    const sg=SEGS[p.seg],a=sg.tStep+WK.STEP*(k-sg.from),mv=ep(t,a,a+.36),done=t>=a+.42;
+    if(t>=a){const pv=k?PATH[k-1]:{i:0,j:-1};rx=lerp(g.cx(pv.j),g.cx(p.j),mv);ry=lerp(g.cy(pv.i),g.cy(p.i),mv);}
+    g.on(p.i,p.j,done);pop(c.ans[k],done?ep(t,a+.42,a+.6):0);if(done)rec++;
+  });
+  SEGS.forEach(sg=>{const q=clamp((t-sg.tStep)/WK.STEP,0,sg.steps),w=Math.floor(q),f=q-w;
+    c.segs[SEGS.indexOf(sg)].set((w+(w<sg.steps?ease(clamp(f/.6)):0))/sg.steps);});
+  c.ring.style.opacity=ep(t,1.8,2.3)*(after?1-ep(t,WK.END+.3,WK.END+.9):1);putRing(c.ring,rx,ry);
+  c.al.textContent=`ans（已记录 ${rec} 个，size = 12）`;c.al.style.opacity=ep(t,1,1.5);
+  // n、m 的显示
+  let nv=N0,mv=M0,sw=0,bump=0,red=false;
+  if(cur){nv=cur.n0;mv=t>=cur.tDec+.5?cur.m1:cur.m0;bump=ep(t,cur.tDec+.3,cur.tDec+.5)*(1-ep(t,cur.tDec+.5,cur.tDec+1));red=t>=cur.tDec+.5&&t<cur.tSwp;sw=ep(t,cur.tSwp+.25,cur.tSwp+1.15);}
+  else if(after){const l=SEGS[SEGS.length-1];nv=l.n2;mv=l.m2;}
+  if(sw>=1){nv=cur.n2;mv=cur.m2;sw=0;}
+  [nv,mv].forEach((v,k)=>{const e=c.v[k];e.textContent=String(v);
+    e.style.transform=`translate(${(k?-1:1)*(BX[1]-BX[0])*sw}px,${(k?1:-1)*30*Math.sin(Math.PI*sw)}px) scale(${1+(k?.25*bump:0)})`;
+    e.style.color=(k===1&&red)?'var(--red)':'';e.style.opacity=ep(t,.6,1.1);});
+  // 方向
+  const di=cur?cur.di:after?0:0;
+  c.dl.textContent=cur?`di = ${di}`:'';c.da.textContent=cur?DARR[di]:'';c.dn.textContent=cur?DNAME[di]:'';
+  const dop=cur?ep(t,cur.t0+.1,cur.t0+.5):0;c.dl.style.opacity=dop;c.da.style.opacity=dop;c.dn.style.opacity=dop;
+  // 状态行与代码高亮
+  let line=null;
+  if(cur){
+    const q=(t-cur.tStep)/WK.STEP,w=Math.floor(q),f=q-w,walked=clamp(Math.floor(q+.58),0,cur.steps);
+    c.s1.innerHTML=`第 ${s+1} 段：向${DNAME[di]}，走 n = <b>${cur.n0}</b> 步`+(t>=cur.tStep?`　已走 ${walked} 步`:'');c.s1.style.opacity=1;
+    if(t<cur.tStep){line=t<cur.t0+.5?5:6;c.s2.style.opacity=0;}
+    else if(t<cur.tDec){line=w>=cur.steps?10:f<.21?7:f<.42?8:9;c.s2.style.opacity=0;}
+    else if(t<cur.tSwp){line=11;c.s2.innerHTML=`m--：${cur.m0} → <b style="color:var(--red)">${cur.m1}</b>`;c.s2.style.opacity=ep(t,cur.tDec+.1,cur.tDec+.4);}
+    else{line=12;c.s2.innerHTML=`swap(n, m)：n = <b>${cur.n2}</b>，m = <b>${cur.m2}</b>`;c.s2.style.opacity=1;}
+  }else if(after){
+    c.s1.innerHTML='ans.size() = 12，不再小于 size，循环结束';c.s1.style.opacity=1;
+    c.s2.innerHTML='return ans;';c.s2.style.opacity=ep(t,WK.END+1.6,WK.END+2);line=t<WK.END+1.6?5:14;
+  }else{
+    c.s1.innerHTML='m = 3，n = 4，size = 12，i = 0，j = −1';c.s1.style.opacity=ep(t,.8,1.3);c.s2.style.opacity=0;
+    line=t<.6?null:t<1.3?1:t<2?2:4;
+  }
+  c.code.set(line);
+}});
+
+/* 7 什么时候停 */
+SC.push({title:'什么时候停',dur:12,caps:[
+  [.3,6,'什么时候停：ans 里的个数达到 m × n = 12 就结束。五段的步数 4 + 2 + 3 + 1 + 2，正好是 12。'],
+  [6.2,11.6,'注意 size 要在一开始就算好。后面 m 和 n 一直在变，不能再拿它们相乘。']],
+build(r){
+  const c={};
+  c.l1=H('div','a',{left:120,top:190,fontFamily:'var(--mono)',fontSize:34},r,'<span class="kw">for</span> (<span class="kw">int</span> di = 0; <span style="background:var(--marker);padding:2px 6px;border-radius:4px">ans.size() &lt; size</span>; di = (di + 1) % 4)');
+  c.terms=SEGS.map((s,k)=>H('div','a',{left:120+150*k,top:300,width:150,fontFamily:'var(--num)',fontSize:96,lineHeight:1.1},r,`${s.steps}<span style="font-size:60px;color:var(--graphite)"> ${k<4?'+':'='}</span>`));
+  c.tot=H('div','a',{left:120+150*5,top:300,fontFamily:'var(--num)',fontSize:96,color:'var(--red)',lineHeight:1.1},r,'12');
+  c.tn=H('div','a hand',{left:1040,top:336,fontSize:40},r,'= 3 × 4 = size');
+  c.ans=PATH.map((p,k)=>H('div','cell on',{left:120+92*k,top:470,width:80,height:80,fontSize:34},r,String(p.v)));
+  c.l2=H('div','a',{left:120,top:650,fontFamily:'var(--mono)',fontSize:38},r,'<span class="kw">int</span> size = m * n;');
+  c.n2=H('div','a hand',{left:560,top:654,fontSize:38},r,'← 一开始就算好');
+  c.n3=H('div','a',{left:120,top:730,fontSize:28,color:'var(--graphite)'},r,'循环里 m、n 一直在变，最后是 n = 0、m = 2，不能再用 m * n');
+  return c;
+},
+update(c,t){
+  vis(c.l1,ep(t,.2,.9),10);
+  c.terms.forEach((e,k)=>vis(e,ep(t,1.6+.5*k,2.1+.5*k),10));vis(c.tot,ep(t,4.3,4.9),10);vis(c.tn,ep(t,4.9,5.5),8);
+  c.ans.forEach((e,k)=>pop(e,ep(t,1.6+.2*k,2+.2*k)));
+  vis(c.l2,ep(t,6.3,6.9),10);vis(c.n2,ep(t,7,7.6),0,-12);vis(c.n3,ep(t,8.2,8.8),8);
+}});
+
+/* 8 收尾 */
+SC.push({title:'一句话',dur:8,caps:[],
+build(r){
+  const c={};
+  c.a=H('div','a',{left:156,top:250,fontFamily:'var(--display)',fontSize:84,fontWeight:900,lineHeight:1.3},r,'方向表管“往哪走”，');
+  c.b=H('div','a',{left:156,top:364,fontFamily:'var(--display)',fontSize:84,fontWeight:900,lineHeight:1.3},r,'n 和 m 轮流管“走几步”。');
+  c.c=H('div','a',{left:164,top:530,fontFamily:'var(--mono)',fontSize:46},r,'m--;　<span style="color:var(--blue)">swap(n, m);</span>');
+  c.d=H('div','a hand',{left:164,top:624,fontSize:36},r,'走 n 步 → 另一个方向减 1 → 交换　　时间 O(m·n)，除答案外额外空间 O(1)');
+  c.e=H('div','a',{left:164,top:750,fontSize:22,color:'var(--graphite)'},r,'LC 54 · 例子：3 行 4 列，五段的步数是 4、2、3、1、2');
+  return c;
+},
+update(c,t){vis(c.a,ep(t,.2,1),20);vis(c.b,ep(t,.6,1.4),20);vis(c.c,ep(t,1.6,2.3),12);vis(c.d,ep(t,2.4,3.1),12);vis(c.e,ep(t,3,3.6),0);}
+});
+
+/* ================= 时间轴 ================= */
+let TOTAL=0;SC.forEach(s=>{s.t0=TOTAL;TOTAL+=s.dur;});
+const CAPS=[];SC.forEach(s=>s.caps.forEach(([a,b,x])=>CAPS.push([s.t0+a,s.t0+b,x])));
+const stage=document.getElementById('stage'),sceneEl=document.getElementById('scene'),chap=document.getElementById('chap');
+const capEl=document.getElementById('cap'),capSpan=capEl.firstElementChild,progFill=document.getElementById('progFill');
+SC.forEach((s,i)=>{if(i)H('div','tick',{left:s.t0/TOTAL*1920-1},document.getElementById('prog'));});
+let cur=-1,ctx=null;
+function seek(t){
+  t=clamp(t,0,TOTAL-1e-3);
+  const i=SC.findIndex(s=>t<s.t0+s.dur),s=SC[i],lt=t-s.t0;
+  if(i!==cur){sceneEl.innerHTML='';cur=i;ctx=s.build(sceneEl);chap.textContent=`${String(i+1).padStart(2,'0')} / ${String(SC.length).padStart(2,'0')}　${s.title}`;}
+  const fin=i===SC.length-1?1:1-pr(lt,s.dur-.45,s.dur);
+  sceneEl.style.opacity=Math.min(pr(lt,0,.45),fin);
+  s.update(ctx,lt);
+  const cp=CAPS.find(c=>t>=c[0]&&t<c[1]);
+  if(cp){if(capSpan.textContent!==cp[2])capSpan.textContent=cp[2];capEl.style.opacity=Math.min(pr(t,cp[0],cp[0]+.25),1-pr(t,cp[1]-.25,cp[1]));}
+  else capEl.style.opacity=0;
+  progFill.style.width=(t/TOTAL*100)+'%';
+  return i;
+}
+window.__seek=seek;window.__total=TOTAL;
+
+/* ================= 播放器 ================= */
+const wrap=document.getElementById('wrap'),holder=document.getElementById('holder');
+function fit(){
+  const sc=CAPTURE?1:Math.min(wrap.clientWidth/1920,wrap.clientHeight/1080);
+  holder.style.width=1920*sc+'px';holder.style.height=1080*sc+'px';stage.style.transform=`scale(${sc})`;
+}
+fit();addEventListener('resize',fit);
+if(CAPTURE){
+  const m=location.search.match(/[?&]t=([\d.]+)/);seek(m?+m[1]:0);
+  return;
+}
+const playBtn=document.getElementById('play'),timeEl=document.getElementById('time'),seekEl=document.getElementById('seek');
+const speedBtn=document.getElementById('speed'),chapWrap=document.getElementById('chapters');
+const ICON_PLAY='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>';
+const ICON_PAUSE='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>';
+seekEl.max=TOTAL;
+const chapBtns=SC.map((s,i)=>{const b=H('button',null,null,chapWrap,`${i+1} ${s.title}`);b.addEventListener('click',()=>{T=s.t0+.01;});return b;});
+const speeds=[1,1.25,1.5,.75];let si=0;
+let playing=true,T=0,last=null,dragging=false,shownIcon=null;
+const mmss=x=>{x=Math.max(0,Math.floor(x));return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');};
+function toggle(){if(T>=TOTAL-.05)T=0;playing=!playing;}
+playBtn.addEventListener('click',toggle);
+stage.addEventListener('click',toggle);
+speedBtn.addEventListener('click',()=>{si=(si+1)%speeds.length;speedBtn.textContent=speeds[si]+'×';});
+seekEl.addEventListener('input',()=>{T=+seekEl.value;dragging=true;});
+seekEl.addEventListener('change',()=>{dragging=false;});
+addEventListener('keydown',e=>{
+  if(e.target===seekEl&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
+  if(e.key===' '){e.preventDefault();toggle();}
+  else if(e.key==='ArrowLeft')T=Math.max(0,T-5);
+  else if(e.key==='ArrowRight')T=Math.min(TOTAL,T+5);
+  else if(/^[1-9]$/.test(e.key)&&SC[+e.key-1])T=SC[+e.key-1].t0+.01;
+});
+function frame(now){
+  if(last!==null&&playing&&!dragging){T+=(now-last)/1000*speeds[si];if(T>=TOTAL){T=TOTAL;playing=false;}}
+  last=now;
+  const i=seek(T);
+  if(!dragging)seekEl.value=T;
+  timeEl.textContent=mmss(T)+' / '+mmss(TOTAL);
+  const want=playing?'pause':'play';
+  if(shownIcon!==want){playBtn.innerHTML=playing?ICON_PAUSE:ICON_PLAY;shownIcon=want;}
+  chapBtns.forEach((b,k)=>b.classList.toggle('on',k===i));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
